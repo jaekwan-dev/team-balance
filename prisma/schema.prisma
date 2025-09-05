@@ -1,0 +1,169 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String  @map("user_id")
+  type              String
+  provider          String
+  providerAccountId String  @map("provider_account_id")
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique @map("session_token")
+  userId       String   @map("user_id")
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verificationtokens")
+}
+
+model User {
+  id                String       @id @default(cuid())
+  kakaoId           String?      @unique @map("kakao_id")
+  name              String?
+  email             String?      @unique
+  emailVerified     DateTime?    @map("email_verified")
+  image             String?
+  phone             String?
+  level             Level        @default(ROOKIE)
+  role              Role         @default(MEMBER)
+  position          String?
+  isProfileComplete Boolean      @default(false) @map("is_profile_complete")
+  createdAt         DateTime     @default(now()) @map("created_at")
+  updatedAt         DateTime     @updatedAt @map("updated_at")
+  accounts          Account[]
+  attendances       Attendance[]
+  comments          Comment[]
+  createdSchedules  Schedule[]   @relation("ScheduleCreator")
+  sessions          Session[]
+  teamMembers       TeamMember[]
+
+  @@map("users")
+}
+
+model Schedule {
+  id              String       @id @default(cuid())
+  title           String
+  date            DateTime
+  location        String
+  description     String?
+  createdById     String       @map("created_by_id")
+  createdAt       DateTime     @default(now()) @map("created_at")
+  updatedAt       DateTime     @updatedAt @map("updated_at")
+  maxParticipants Int?         @map("max_participants")
+  attendances     Attendance[]
+  comments        Comment[]
+  createdBy       User         @relation("ScheduleCreator", fields: [createdById], references: [id])
+  teams           Team[]
+
+  @@map("schedules")
+}
+
+model Attendance {
+  id         String           @id @default(cuid())
+  scheduleId String           @map("schedule_id")
+  userId     String?          @map("user_id")
+  guestName  String?          @map("guest_name")
+  guestLevel Level?           @map("guest_level")
+  status     AttendanceStatus @default(PENDING)
+  createdAt  DateTime         @default(now()) @map("created_at")
+  updatedAt  DateTime         @updatedAt @map("updated_at")
+  schedule   Schedule         @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+  user       User?            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("attendances")
+}
+
+model Team {
+  id         String       @id @default(cuid())
+  scheduleId String       @map("schedule_id")
+  teamNumber Int          @map("team_number")
+  totalScore Int          @default(0) @map("total_score")
+  createdAt  DateTime     @default(now()) @map("created_at")
+  members    TeamMember[]
+  schedule   Schedule     @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+
+  @@unique([scheduleId, teamNumber])
+  @@map("teams")
+}
+
+model TeamMember {
+  id         String  @id @default(cuid())
+  teamId     String  @map("team_id")
+  userId     String? @map("user_id")
+  guestName  String? @map("guest_name")
+  guestLevel Level?  @map("guest_level")
+  levelScore Int     @map("level_score")
+  team       Team    @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user       User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("team_members")
+}
+
+model Comment {
+  id         String   @id @default(cuid())
+  scheduleId String   @map("schedule_id")
+  userId     String   @map("user_id")
+  content    String
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+  schedule   Schedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("comments")
+}
+
+enum Role {
+  ADMIN
+  MEMBER
+}
+
+enum Level {
+  PRO
+  SEMI_PRO_1
+  SEMI_PRO_2
+  SEMI_PRO_3
+  AMATEUR_1
+  AMATEUR_2
+  AMATEUR_3
+  AMATEUR_4
+  AMATEUR_5
+  BEGINNER_1
+  BEGINNER_2
+  BEGINNER_3
+  ROOKIE
+}
+
+enum AttendanceStatus {
+  ATTEND
+  ABSENT
+  PENDING
+}

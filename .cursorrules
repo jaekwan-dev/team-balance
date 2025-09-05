@@ -1,0 +1,51 @@
+# Cursor AI Rules for TeamBalance Project
+
+## Environment & Commands
+- Use Windows PowerShell commands only (not bash/linux commands)
+- Use `pnpm` as the package manager
+- Use `npx` for running packages when needed
+- Always use PowerShell syntax for file operations
+
+## Server Management
+- DO NOT start/stop development servers (`pnpm dev`, `npm start`, etc.)
+- DO NOT run background processes
+- User will handle server execution manually
+- Focus on code changes and file operations only
+
+## Build Requirements
+- After all changes are completed, ALWAYS run `pnpm build`
+- If build errors occur, resolve them immediately
+- Ensure production build succeeds before completing tasks
+
+## Project Structure
+- This is a Next.js 15 project with TypeScript
+- Uses Tailwind CSS v4 with F1 Racing theme
+- NextAuth.js v5 for authentication
+- Prisma with PostgreSQL (NeonDB)
+- shadcn/ui components
+
+## Code Style & Preferences
+- F1 Racing theme with dark colors (black, red, yellow, silver)
+- Use Korean language for user-facing text
+- Professional racing terminology in UI
+- Font: Rajdhani (body), Orbitron (titles)
+- Prefer modern React patterns (Server Components, Server Actions)
+
+## File Operations
+- Always use relative paths from project root
+- Check file existence before editing
+- Use proper TypeScript types
+- Follow Next.js App Router conventions
+
+## Database & Auth
+- Prisma schema uses enum types for levels/roles
+- NextAuth configured with Kakao OAuth
+- Use Node.js runtime for API routes (not Edge)
+- Session-based authentication
+
+## Responses
+- Always respond in Korean language
+- Be concise but thorough
+- Provide clear explanations for changes
+- Use appropriate technical terminology
+
