@@ -10,30 +10,15 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Zap, User, Phone, Target } from "lucide-react"
+import { Zap, User, Phone } from "lucide-react"
 
 const profileSchema = z.object({
   name: z.string().min(2, "이름은 2글자 이상이어야 합니다"),
   phone: z.string().min(10, "올바른 전화번호를 입력해주세요").optional(),
-  position: z.string().min(1, "선호 포지션을 선택해주세요"),
 })
 
 type ProfileFormData = z.infer<typeof profileSchema>
 
-const positions = [
-  { value: "GK", label: "골키퍼 (GK)" },
-  { value: "CB", label: "센터백 (CB)" },
-  { value: "LB", label: "레프트백 (LB)" },
-  { value: "RB", label: "라이트백 (RB)" },
-  { value: "CDM", label: "수비형 미드필더 (CDM)" },
-  { value: "CM", label: "센터 미드필더 (CM)" },
-  { value: "CAM", label: "공격형 미드필더 (CAM)" },
-  { value: "LW", label: "레프트윙 (LW)" },
-  { value: "RW", label: "라이트윙 (RW)" },
-  { value: "ST", label: "스트라이커 (ST)" },
-  { value: "ANY", label: "어디든 상관없음" },
-]
 
 export default function ProfileSetupPage() {
   const { data: session, update } = useSession()
@@ -45,7 +30,6 @@ export default function ProfileSetupPage() {
     defaultValues: {
       name: session?.user?.name || "",
       phone: "",
-      position: "",
     },
   })
 
@@ -95,7 +79,7 @@ export default function ProfileSetupPage() {
               선수 프로필 설정
             </CardTitle>
             <CardDescription className="text-gray-400 font-medium">
-              축구 선수 정보를 설정해주세요
+              풋살 선수 정보를 설정해주세요
             </CardDescription>
           </CardHeader>
           <CardContent className="pt-6">
@@ -143,37 +127,6 @@ export default function ProfileSetupPage() {
                   )}
                 />
 
-                <FormField
-                  control={form.control}
-                  name="position"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-gray-200 font-bold tracking-wider flex items-center">
-                        <Target className="w-4 h-4 mr-2 text-green-500" />
-                        선호 포지션 *
-                      </FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger className="bg-gray-900/50 border-red-600/30 text-white focus:border-red-500 font-mono">
-                            <SelectValue placeholder="포지션 선택" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent className="bg-gray-900 border-red-600/50">
-                          {positions.map((position) => (
-                            <SelectItem 
-                              key={position.value} 
-                              value={position.value}
-                              className="text-white hover:bg-red-600/20 font-mono"
-                            >
-                              {position.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage className="text-red-400" />
-                    </FormItem>
-                  )}
-                />
 
                 <Button
                   type="submit"

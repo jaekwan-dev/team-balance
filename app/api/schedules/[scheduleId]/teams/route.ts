@@ -1,9 +1,26 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { Level } from "@prisma/client"
 
 // Node.js 런타임 사용 (Prisma 호환성)
 export const runtime = 'nodejs'
+
+// 팀편성용 참석자 타입
+interface TeamAttendee {
+  attendance: {
+    id: string
+    userId: string | null
+    guestName: string | null
+    guestLevel: string | null
+    status: string
+  }
+  score: number
+  name: string
+  level: string
+  isGuest: boolean
+  inviterId: string | null
+}
 
 // 팀편성 결과 조회
 export async function GET(
@@ -114,6 +131,13 @@ export async function POST(
       return NextResponse.json({ error: "참석자가 팀 수보다 적습니다" }, { status: 400 })
     }
 
+    // 최소 팀당 인원수와 추가 배정될 인원 계산
+    const basePlayersPerTeam = Math.floor(attendees.length / teamCount)
+    const extraPlayers = attendees.length % teamCount
+    
+    console.log(`팀편성: ${attendees.length}명을 ${teamCount}팀으로 배정`)
+    console.log(`기본 인원: 팀당 ${basePlayersPerTeam}명, 추가 배정: ${extraPlayers}명`)
+
     // 기존 팀 편성 삭제
     await prisma.team.deleteMany({
       where: { scheduleId }
@@ -147,19 +171,30 @@ export async function POST(
     // 팀 초기화
     const teams = Array.from({ length: teamCount }, (_, index) => ({
       teamNumber: index + 1,
-      members: [] as any[],
+      members: [] as TeamAttendee[],
       totalScore: 0
     }))
 
-    // 1단계: 일반 멤버 배정 (스네이크 드래프트)
+    // 전체 참석자를 하나로 합치고 레벨별로 정렬 (타입 통일)
+    const allAttendees: TeamAttendee[] = [...regularMembers, ...guests]
+      .sort((a, b) => b.score - a.score)
+
+    // 1단계: 스네이크 드래프트로 기본 인원 배정 (각 팀에 basePlayersPerTeam명씩)
     let currentTeamIndex = 0
     let direction = 1 // 1: 정방향, -1: 역방향
+    let assignedCount = 0
 
-    for (const member of regularMembers) {
-      teams[currentTeamIndex].members.push(member)
-      teams[currentTeamIndex].totalScore += member.score
+    // 기본 인원 배정 (모든 팀에 같은 수)
+    const totalBaseAssignment = basePlayersPerTeam * teamCount
+    
+    for (let i = 0; i < totalBaseAssignment; i++) {
+      const attendee = allAttendees[assignedCount]
+      
+      teams[currentTeamIndex].members.push(attendee)
+      teams[currentTeamIndex].totalScore += attendee.score
+      assignedCount++
 
-      // 다음 팀으로 이동
+      // 다음 팀으로 이동 (스네이크 패턴)
       if (direction === 1) {
         if (currentTeamIndex === teamCount - 1) {
           direction = -1
@@ -175,25 +210,35 @@ export async function POST(
       }
     }
 
-    // 2단계: 게스트를 초대자와 같은 팀에 배정
-    for (const guest of guests) {
-      // 초대자가 있는 팀 찾기
-      const inviterTeamIndex = teams.findIndex(team => 
-        team.members.some(member => member.attendance.userId === guest.inviterId)
-      )
+    // 2단계: 추가 인원이 있으면 평균 점수가 낮은 팀에 배정
+    if (extraPlayers > 0) {
+      // 각 팀의 평균 점수 계산
+      const teamsWithAverage = teams.map((team, index) => ({
+        index,
+        averageScore: team.members.length > 0 ? team.totalScore / team.members.length : 0,
+        currentMembers: team.members.length
+      })).sort((a, b) => a.averageScore - b.averageScore) // 평균 점수가 낮은 순으로 정렬
 
-      if (inviterTeamIndex !== -1) {
-        // 초대자와 같은 팀에 배정
-        teams[inviterTeamIndex].members.push(guest)
-        teams[inviterTeamIndex].totalScore += guest.score
-      } else {
-        // 초대자를 찾을 수 없으면 가장 적은 점수의 팀에 배정
-        const minScoreTeamIndex = teams.reduce((minIndex, team, index) => 
-          team.totalScore < teams[minIndex].totalScore ? index : minIndex, 0
-        )
-        teams[minScoreTeamIndex].members.push(guest)
-        teams[minScoreTeamIndex].totalScore += guest.score
+      console.log('기본 배정 후 각 팀 평균:', teamsWithAverage.map(t => 
+        `팀${t.index + 1}: ${t.averageScore.toFixed(2)}점 (${t.currentMembers}명)`
+      ))
+
+      // 평균 점수가 낮은 팀부터 추가 인원 배정
+      for (let i = 0; i < extraPlayers; i++) {
+        const attendee = allAttendees[assignedCount]
+        const targetTeamIndex = teamsWithAverage[i].index
+        
+        teams[targetTeamIndex].members.push(attendee)
+        teams[targetTeamIndex].totalScore += attendee.score
+        assignedCount++
+        
+        console.log(`추가 배정: ${attendee.name} -> 팀${targetTeamIndex + 1}`)
       }
+      
+      // 최종 팀별 인원 수 출력
+      teams.forEach((team, index) => {
+        console.log(`팀${index + 1}: ${team.members.length}명 (평균: ${(team.totalScore / team.members.length).toFixed(2)}점)`)
+      })
     }
 
     // 팀 데이터베이스에 저장
@@ -213,9 +258,9 @@ export async function POST(
             prisma.teamMember.create({
               data: {
                 teamId: createdTeam.id,
-                userId: member.attendance.user?.id,
-                guestName: member.attendance.guestName,
-                guestLevel: member.attendance.guestLevel,
+                userId: member.isGuest ? null : member.attendance.userId,
+                guestName: member.isGuest ? member.name : null,
+                guestLevel: member.isGuest ? member.level as Level : null,
                 levelScore: member.score
               }
             })

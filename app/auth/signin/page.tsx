@@ -1,7 +1,8 @@
 import { signIn } from "@/lib/auth"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { MessageCircle, Zap, Flag, Users } from "lucide-react"
+import { MessageCircle } from "lucide-react"
+import { FaFutbol } from "react-icons/fa"
 
 export default function SignInPage() {
   return (
@@ -13,12 +14,7 @@ export default function SignInPage() {
         {/* Team Logo */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-r from-red-600 to-red-800 rounded-full mb-4 shadow-2xl">
-            <Zap className="w-12 h-12 text-white" />
-          </div>
-          <div className="flex items-center justify-center space-x-2 text-red-500 mb-2">
-            <Flag className="w-4 h-4" />
-            <span className="text-sm font-mono tracking-wider">축구팀 플랫폼</span>
-            <Flag className="w-4 h-4" />
+            <FaFutbol className="w-12 h-12 text-white" />
           </div>
         </div>
 
@@ -28,10 +24,10 @@ export default function SignInPage() {
               PPUNG<span className="text-red-500">BROS</span>
             </CardTitle>
             <CardDescription className="text-gray-400 font-medium tracking-wide">
-              전문 축구팀 관리 시스템
+              뻥브로스
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-6 pt-6">
+          <CardContent className="space-y-6 pt-3">
             <form
               action={async () => {
                 "use server"
@@ -40,20 +36,19 @@ export default function SignInPage() {
             >
               <Button
                 type="submit"
-                className="w-full bg-gradient-to-r from-yellow-500 to-yellow-400 hover:from-yellow-600 hover:to-yellow-500 text-black font-bold py-4 text-lg transition-all duration-300 transform hover:scale-105 shadow-lg"
+                className="w-full bg-gradient-to-r from-yellow-500 to-yellow-400 hover:from-yellow-600 hover:to-yellow-500 text-black font-bold py-6 text-lg transition-all duration-300 transform hover:scale-105 shadow-lg"
               >
-                <MessageCircle className="w-6 h-6 mr-3" />
+                <MessageCircle className="w-6 h-7 mr-3" />
                 카카오 로그인
               </Button>
             </form>
             
-            <div className="text-center space-y-3">
+            <div className="text-center space-y-0">
               <div className="flex items-center justify-center space-x-2 text-gray-400">
-                <Users className="w-4 h-4" />
-                <span className="text-xs font-mono tracking-wider">자동 회원가입 지원</span>
+                {/* <span className="text-xs font-mono tracking-wider">로그인시 자동 회원가입 됩니다.</span> */}
               </div>
               <div className="px-4 py-2 bg-red-600/20 border border-red-600/50 rounded-lg">
-                <span className="text-red-400 text-xs font-mono">안전 • 빠름 • 전문적</span>
+                <span className="text-red-400 text-xs font-mono">로그인시 자동 회원가입 됩니다.</span>
               </div>
             </div>
           </CardContent>

@@ -1,27 +1,25 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import Image from "next/image"
+import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Users, Trophy, Calendar, Mail, Phone, Shield } from "lucide-react"
+import { Users } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Button } from "@/components/ui/button"
 
 interface Member {
   id: string
   name: string | null
-  image: string | null
   email: string | null
   phone: string | null
   level: string
   role: string
-  position: string | null
   isProfileComplete: boolean
   createdAt: string
 }
 
 export function MembersClient({ currentUserRole }: { currentUserRole: string }) {
+  const router = useRouter()
   const [members, setMembers] = useState<Member[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -63,27 +61,6 @@ export function MembersClient({ currentUserRole }: { currentUserRole: string }) 
     }
   }
 
-  const updateUserRole = async (userId: string, newRole: 'MEMBER' | 'ADMIN') => {
-    try {
-      const response = await fetch(`/api/admin/users/${userId}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ role: newRole }),
-      })
-
-      if (response.ok) {
-        await fetchMembers() // 목록 새로고침
-        alert('역할이 성공적으로 변경되었습니다!')
-      } else {
-        alert('역할 변경에 실패했습니다.')
-      }
-    } catch (error) {
-      console.error('역할 업데이트 실패:', error)
-      alert('역할 변경에 실패했습니다.')
-    }
-  }
 
   useEffect(() => {
     fetchMembers()
@@ -143,6 +120,26 @@ export function MembersClient({ currentUserRole }: { currentUserRole: string }) 
     { value: 'ROOKIE', label: '루키' }
   ]
 
+  // 레벨별로 멤버 그룹화
+  const groupMembersByLevel = (members: Member[]) => {
+    const levelOrder = ['PRO', 'SEMI_PRO_1', 'SEMI_PRO_2', 'SEMI_PRO_3', 'AMATEUR_1', 'AMATEUR_2', 'AMATEUR_3', 'AMATEUR_4', 'AMATEUR_5', 'BEGINNER_1', 'BEGINNER_2', 'BEGINNER_3', 'ROOKIE']
+    const grouped: { [key: string]: Member[] } = {}
+    
+    // 레벨별 그룹 생성
+    members.forEach(member => {
+      if (!grouped[member.level]) {
+        grouped[member.level] = []
+      }
+      grouped[member.level].push(member)
+    })
+    
+    // 레벨 순서대로 정렬
+    return levelOrder.filter(level => grouped[level]?.length > 0).map(level => ({
+      level,
+      members: grouped[level].sort((a, b) => (a.name || '').localeCompare(b.name || ''))
+    }))
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -153,183 +150,81 @@ export function MembersClient({ currentUserRole }: { currentUserRole: string }) 
 
   return (
     <div className="space-y-8">
-      {/* 헤더 통계 */}
-      <Card className="bg-gradient-to-br from-blue-900/90 to-blue-800/90 border-blue-500/30 backdrop-blur-sm shadow-2xl">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <div className="w-16 h-16 bg-gradient-to-r from-blue-600 to-blue-700 rounded-full flex items-center justify-center">
-                <Users className="h-8 w-8 text-white" />
-              </div>
-              <div>
-                <CardTitle className="text-3xl font-black text-white">전체 팀원</CardTitle>
-              </div>
+      {/* 간소화된 헤더 */}
+      <div className="bg-gradient-to-r from-blue-900/30 to-blue-800/30 rounded-lg p-4 border border-blue-500/20">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <div className="w-8 h-8 bg-blue-600/80 rounded-full flex items-center justify-center">
+              <Users className="h-4 w-4 text-white" />
             </div>
-            <div className="text-right">
-              <div className="text-5xl font-black text-blue-400">{members.length}</div>
-            </div>
+            <h2 className="text-xl font-bold text-white">전체 팀원</h2>
           </div>
-        </CardHeader>
-      </Card>
+          <Badge className="bg-blue-600/20 text-blue-400 border-blue-600/50 text-lg px-3 py-1 font-bold">
+            {members.length}명
+          </Badge>
+        </div>
+      </div>
 
-      {/* 멤버 목록 */}
+      {/* 멤버 목록 - 레벨별로 그룹화 */}
       {members.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {members.map((member, index) => (
-            <Card key={member.id} className="bg-gradient-to-br from-gray-900/90 to-black/90 border-gray-500/30 backdrop-blur-sm hover:border-blue-400/50 transition-all duration-500 shadow-xl">
-              <CardContent className="p-6">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center space-x-3">
-                    {/* 카카오 프로필 사진 또는 기본 아바타 */}
-                    <div className="relative">
-                      {member.image ? (
-                        <Image 
-                          src={member.image} 
-                          alt={member.name || '프로필'} 
-                          width={48}
-                          height={48}
-                          className="w-12 h-12 rounded-full object-cover border-2 border-gray-600/50"
-                        />
-                      ) : (
-                        <div className={`w-12 h-12 ${member.role === 'ADMIN' ? 'bg-gradient-to-r from-yellow-600 to-yellow-700' : 'bg-gradient-to-r from-blue-600 to-blue-700'} rounded-full flex items-center justify-center`}>
-                          <span className="text-white font-bold text-lg">
-                            {member.name?.charAt(0) || 'U'}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                    <div>
-                      <h3 className="text-xl font-bold text-white">
-                        {member.name || '이름 없음'}
-                      </h3>
-                      <div className="flex items-center space-x-2 mt-1">
+        <div className="space-y-6">
+          {groupMembersByLevel(members).map((group) => (
+            <Card key={group.level} className="bg-gradient-to-br from-gray-900/90 to-black/90 border-gray-500/30 backdrop-blur-sm shadow-xl">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg font-bold text-white flex items-center">
+                    <Badge className={`${getLevelBadgeColor(group.level)} text-sm px-3 py-1 rounded-full border font-bold mr-3`}>
+                      {getLevelText(group.level)}
+                    </Badge>
+                    <span className="text-gray-400 text-base">({group.members.length}명)</span>
+                  </CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent className="p-4 pt-0">
+                <div className="space-y-2">
+                  {group.members.map((member) => (
+                    <div 
+                      key={member.id} 
+                      onClick={() => router.push(`/profile/${member.id}`)}
+                      className="flex items-center justify-between p-3 bg-gray-800/30 rounded-lg hover:bg-gray-800/50 transition-all duration-300 border border-gray-700/30 cursor-pointer hover:border-gray-600/50"
+                    >
+                      {/* 이름과 관리자 표시 */}
+                      <div className="flex items-center space-x-2 min-w-0 flex-1">
+                        <span className="text-white font-medium text-sm truncate">
+                          {member.name || '이름 없음'}
+                        </span>
                         {member.role === 'ADMIN' && (
-                          <Badge className="bg-gradient-to-r from-yellow-600/20 to-yellow-700/20 text-yellow-400 border-yellow-600/50 text-xs px-2 py-1 rounded-full">
-                            👑 관리자
+                          <Badge className="bg-gradient-to-r from-yellow-600/20 to-yellow-700/20 text-yellow-400 border-yellow-600/50 text-xs px-1.5 py-0.5 rounded-full flex-shrink-0">
+                            👑
                           </Badge>
                         )}
-                        <Badge className={`${getLevelBadgeColor(member.level)} text-xs px-2 py-1 rounded-full border`}>
-                          {getLevelText(member.level)}
-                        </Badge>
                       </div>
-                    </div>
-                  </div>
-                  <div className="w-8 h-8 bg-gradient-to-r from-gray-600 to-gray-700 rounded-full flex items-center justify-center text-white font-bold text-sm">
-                    {index + 1}
-                  </div>
-                </div>
-
-                {/* 기본 정보 */}
-                <div className="space-y-3">
-                  {/* 연락처 정보는 관리자만 표시 */}
-                  {currentUserRole === 'ADMIN' && member.email && (
-                    <div className="bg-gray-800/50 rounded-xl p-3 border border-gray-700/50">
-                      <div className="flex items-center space-x-2">
-                        <Mail className="w-4 h-4 text-gray-400" />
-                        <div>
-                          <div className="text-xs text-gray-400">이메일</div>
-                          <div className="text-white font-semibold text-sm">{member.email}</div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {currentUserRole === 'ADMIN' && member.phone && (
-                    <div className="bg-gray-800/50 rounded-xl p-3 border border-gray-700/50">
-                      <div className="flex items-center space-x-2">
-                        <Phone className="w-4 h-4 text-gray-400" />
-                        <div>
-                          <div className="text-xs text-gray-400">연락처</div>
-                          <div className="text-white font-semibold text-sm">{member.phone}</div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {member.position && (
-                    <div className="bg-gray-800/50 rounded-xl p-3 border border-gray-700/50">
-                      <div className="flex items-center space-x-2">
-                        <Trophy className="w-4 h-4 text-gray-400" />
-                        <div>
-                          <div className="text-xs text-gray-400">포지션</div>
-                          <div className="text-white font-semibold text-sm">{member.position}</div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="bg-gray-800/50 rounded-xl p-3 border border-gray-700/50">
-                    <div className="flex items-center space-x-2">
-                      <Calendar className="w-4 h-4 text-gray-400" />
-                      <div>
-                        <div className="text-xs text-gray-400">가입일</div>
-                        <div className="text-white font-semibold text-sm">
-                          {new Date(member.createdAt).toLocaleDateString('ko-KR', { 
-                            year: 'numeric',
-                            month: 'long', 
-                            day: 'numeric' 
-                          })}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* 관리자 전용 기능 */}
-                {currentUserRole === 'ADMIN' && (
-                  <div className="space-y-3">
-                    {/* 레벨 관리 */}
-                    <div className="bg-gray-800/50 rounded-xl p-3 border border-gray-700/50">
-                      <div className="text-xs text-gray-400 mb-2">레벨 관리</div>
-                      <Select onValueChange={(value) => updateUserLevel(member.id, value)} defaultValue={member.level}>
-                        <SelectTrigger className="bg-gray-900/50 border-gray-600/50 text-white text-xs h-8">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="bg-gray-900 border-gray-600/50">
-                          {levelOptions.map((level) => (
-                            <SelectItem 
-                              key={level.value} 
-                              value={level.value}
-                              className="text-white hover:bg-gray-700 text-xs"
+                      
+                      {/* 레벨 - 관리자만 선택창 */}
+                      <div className="flex items-center space-x-2 flex-shrink-0">
+                        {currentUserRole === 'ADMIN' && (
+                          <Select
+                            value={member.level}
+                            onValueChange={(value) => updateUserLevel(member.id, value)}
+                          >
+                            <SelectTrigger 
+                              className="bg-gray-800/50 border-gray-600/50 text-white text-xs h-7 w-24"
+                              onClick={(e) => e.stopPropagation()}
                             >
-                              {level.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent className="bg-gray-800 border-gray-600/50">
+                              {levelOptions.map((level) => (
+                                <SelectItem key={level.value} value={level.value} className="text-white hover:bg-gray-700 text-xs">
+                                  {level.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        )}
+                      </div>
                     </div>
-
-                    {/* 관리자 승격 (일반 멤버만) */}
-                    {member.role === 'MEMBER' && (
-                      <Button
-                        onClick={() => updateUserRole(member.id, 'ADMIN')}
-                        className="w-full bg-gradient-to-r from-yellow-600 to-yellow-700 hover:from-yellow-700 hover:to-yellow-800 text-white font-bold py-2 rounded-xl shadow-lg hover:shadow-yellow-500/25 transition-all duration-300"
-                      >
-                        <Shield className="w-4 h-4 mr-2" />
-                        관리자로 승격
-                      </Button>
-                    )}
-                  </div>
-                )}
-
-                {/* 프로필 완성도 */}
-                <div className="mt-4 pt-4 border-t border-gray-700/50">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-400">프로필 완성도</span>
-                    <span className={`font-semibold ${member.isProfileComplete ? 'text-green-400' : 'text-yellow-400'}`}>
-                      {member.isProfileComplete ? '완료' : '미완료'}
-                    </span>
-                  </div>
-                  <div className="w-full bg-gray-700 rounded-full h-2 mt-2">
-                    <div 
-                      className={`h-2 rounded-full transition-all duration-500 ${
-                        member.isProfileComplete 
-                          ? 'bg-gradient-to-r from-green-500 to-green-400' 
-                          : 'bg-gradient-to-r from-yellow-500 to-yellow-400'
-                      }`}
-                      style={{ width: member.isProfileComplete ? '100%' : '60%' }}
-                    ></div>
-                  </div>
+                  ))}
                 </div>
               </CardContent>
             </Card>

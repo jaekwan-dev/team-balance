@@ -91,7 +91,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { name, phone, position } = body
+    const { name, phone } = body
 
     // 사용자 프로필 업데이트
     const updatedUser = await prisma.user.update({
@@ -99,7 +99,6 @@ export async function POST(request: NextRequest) {
       data: {
         name,
         phone,
-        position,
         isProfileComplete: true,
       },
     })

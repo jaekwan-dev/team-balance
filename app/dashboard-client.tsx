@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Users, Timer, MapPin, Clock, Check, X, Clock as ClockIcon } from "lucide-react"
+import { Users, Timer, MapPin, Clock, Check, X, Clock as ClockIcon, Edit3, Trash2, MessageCircle, Send } from "lucide-react"
 import { Level, Role, AttendanceStatus } from "@prisma/client"
 
 interface DashboardUser {
@@ -34,6 +34,18 @@ interface Schedule {
     guestName?: string | null
     guestLevel?: string | null
   }[]
+}
+
+interface Comment {
+  id: string
+  content: string
+  createdAt: string
+  user: {
+    id: string
+    name: string | null
+    level: Level
+    role: Role
+  }
 }
 
 interface RecentActivity {
@@ -107,6 +119,11 @@ export function DashboardClient({ user }: { user: DashboardUser }) {
   const [teamFormationLoading, setTeamFormationLoading] = useState(false)
   const [teams, setTeams] = useState<TeamFormation[]>([])
   const [showTeams, setShowTeams] = useState(false)
+  const [comments, setComments] = useState<Comment[]>([])
+  const [showComments, setShowComments] = useState(false)
+  const [newComment, setNewComment] = useState('')
+  const [commentLoading, setCommentLoading] = useState(false)
+  const [showRevote, setShowRevote] = useState(false)
 
   useEffect(() => {
     fetchDashboardData()
@@ -145,6 +162,17 @@ export function DashboardClient({ user }: { user: DashboardUser }) {
       })
 
       if (response.ok) {
+        // 참석자 변경으로 기존 팀편성 무효화 (서버에서도 삭제)
+        try {
+          await fetch(`/api/schedules/${scheduleId}/teams/clear`, {
+            method: 'DELETE'
+          })
+        } catch (clearError) {
+          console.error('팀편성 삭제 실패:', clearError)
+        }
+        
+        setShowTeams(false)
+        setTeams([])
         // 대시보드 데이터 새로고침
         await fetchDashboardData()
         alert(status === 'ATTEND' ? '참석으로 등록되었습니다!' : '불참으로 등록되었습니다!')
@@ -185,6 +213,18 @@ export function DashboardClient({ user }: { user: DashboardUser }) {
         setGuestName('')
         setGuestLevel('ROOKIE')
         setShowGuestForm(false)
+        
+        // 참석자 변경으로 기존 팀편성 무효화 (서버에서도 삭제)
+        try {
+          await fetch(`/api/schedules/${scheduleId}/teams/clear`, {
+            method: 'DELETE'
+          })
+        } catch (clearError) {
+          console.error('팀편성 삭제 실패:', clearError)
+        }
+        
+        setShowTeams(false)
+        setTeams([])
         // 대시보드 데이터 새로고침
         await fetchDashboardData()
         alert('게스트 참석이 등록되었습니다!')
@@ -215,6 +255,8 @@ export function DashboardClient({ user }: { user: DashboardUser }) {
         alert(`${teamCount}팀으로 팀편성이 완료되었습니다!`)
         // 팀편성 결과 가져오기
         await fetchTeamFormation(scheduleId)
+        // 대시보드 데이터도 새로고침하여 다른 사용자들도 팀편성 결과를 볼 수 있게 함
+        await fetchDashboardData()
       } else {
         const error = await response.json()
         alert(error.error || '팀편성에 실패했습니다')
@@ -227,25 +269,111 @@ export function DashboardClient({ user }: { user: DashboardUser }) {
     }
   }
 
+  // 일정 수정 핸들러
+  const handleEditSchedule = (scheduleId: string) => {
+    window.location.href = `/admin/schedules/edit/${scheduleId}`
+  }
+
+  // 일정 삭제 핸들러
+  const handleDeleteSchedule = async (scheduleId: string) => {
+    if (!confirm('정말로 이 일정을 삭제하시겠습니까?\n삭제된 일정은 복구할 수 없습니다.')) {
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/schedules/${scheduleId}`, {
+        method: 'DELETE',
+      })
+
+      if (response.ok) {
+        alert('일정이 삭제되었습니다.')
+        await fetchDashboardData() // 대시보드 데이터 새로고침
+      } else {
+        const error = await response.json()
+        alert(error.error || '일정 삭제에 실패했습니다.')
+      }
+    } catch (error) {
+      console.error('일정 삭제 실패:', error)
+      alert('일정 삭제 중 오류가 발생했습니다.')
+    }
+  }
+
   const fetchTeamFormation = async (scheduleId: string) => {
     try {
       const response = await fetch(`/api/schedules/${scheduleId}/teams`)
       if (response.ok) {
         const data = await response.json()
-        setTeams(data.teams)
-        setShowTeams(true)
+        setTeams(data.teams || [])
+        // 팀편성 결과가 실제로 있을 때만 표시
+        if (data.teams && data.teams.length > 0) {
+          setShowTeams(true)
+        } else {
+          setShowTeams(false)
+        }
       }
     } catch (error) {
       console.error('팀편성 결과 조회 실패:', error)
+      setTeams([])
+      setShowTeams(false)
     }
   }
+
+  const fetchComments = async (scheduleId: string) => {
+    try {
+      const response = await fetch(`/api/schedules/${scheduleId}/comments`)
+      if (response.ok) {
+        const data = await response.json()
+        setComments(data.comments)
+      }
+    } catch (error) {
+      console.error('댓글 조회 실패:', error)
+    }
+  }
+
+  const addComment = async (scheduleId: string) => {
+    if (!newComment.trim()) {
+      alert('댓글 내용을 입력해주세요')
+      return
+    }
+
+    if (newComment.trim().length > 500) {
+      alert('댓글은 500자 이하로 입력해주세요')
+      return
+    }
+
+    setCommentLoading(true)
+    try {
+      const response = await fetch(`/api/schedules/${scheduleId}/comments`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ content: newComment.trim() }),
+      })
+
+      if (response.ok) {
+        setNewComment('')
+        await fetchComments(scheduleId)
+        alert('댓글이 등록되었습니다!')
+      } else {
+        const error = await response.json()
+        alert(error.error || '댓글 등록에 실패했습니다.')
+      }
+    } catch (error) {
+      console.error('댓글 등록 실패:', error)
+      alert('댓글 등록에 실패했습니다.')
+    } finally {
+      setCommentLoading(false)
+    }
+  }
+
 
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="text-center">
           <div className="w-12 h-12 border-4 border-red-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-400 racing-mono">대시보드 로딩 중...</p>
+          <p className="text-gray-400 racing-mono">Loading...</p>
         </div>
       </div>
     )
@@ -260,7 +388,6 @@ export function DashboardClient({ user }: { user: DashboardUser }) {
   }
 
   const nextScheduleDate = data.nextSchedule ? new Date(data.nextSchedule.date) : null
-  const isToday = nextScheduleDate ? nextScheduleDate.toDateString() === new Date().toDateString() : false
   const daysUntil = nextScheduleDate ? Math.ceil((nextScheduleDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)) : 0
   
   // 게스트 참석 가능 여부 (경기 2일 전부터)
@@ -273,7 +400,7 @@ export function DashboardClient({ user }: { user: DashboardUser }) {
     <div className="space-y-6">
       {/* 다음 경기 메인 카드 */}
       <Card className="bg-gradient-to-br from-gray-900/90 to-black/90 border-red-500/30 backdrop-blur-sm shadow-2xl">
-        <CardHeader className="pb-4">
+        <CardHeader className="pb-0">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <div className="w-12 h-12 bg-gradient-to-r from-red-600 to-red-700 rounded-full flex items-center justify-center">
@@ -284,23 +411,79 @@ export function DashboardClient({ user }: { user: DashboardUser }) {
                 <p className="text-gray-400 text-sm">Next Match Details</p>
               </div>
             </div>
+            
+            {/* 관리자 전용 일정 관리 버튼 */}
+            {user.role === 'ADMIN' && data.nextSchedule && (
+              <div className="flex items-center space-x-2">
+                <Button
+                  onClick={() => handleEditSchedule(data.nextSchedule!.id)}
+                  size="sm"
+                  className="bg-blue-600/80 hover:bg-blue-700 text-white"
+                >
+                  <Edit3 className="w-4 h-4" />
+                  <span className="hidden sm:inline ml-1">수정</span>
+                </Button>
+                <Button
+                  onClick={() => handleDeleteSchedule(data.nextSchedule!.id)}
+                  size="sm"
+                  className="bg-red-600/80 hover:bg-red-700 text-white"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  <span className="hidden sm:inline ml-1">삭제</span>
+                </Button>
+              </div>
+            )}
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
           {data.nextSchedule ? (
             <div className="space-y-4">
+              {/* 공지사항 - 상단에 별도 표시 */}
+              {data.nextSchedule.description && (
+                <div className="bg-gradient-to-r from-orange-900/30 to-orange-800/30 rounded-2xl p-4 border border-orange-500/50 shadow-lg">
+                  <div className="flex items-start">
+                    <span className="text-orange-400 text-lg mr-3 flex-shrink-0 mt-0.5">📢</span>
+                    <div className="flex-1">
+                      <h4 className="text-orange-300 font-bold text-sm mb-2">공지사항</h4>
+                      <p className="text-orange-100 text-sm leading-relaxed whitespace-pre-wrap">{data.nextSchedule.description}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* 경기 기본 정보 - 모바일 최적화 */}
               <div className="bg-gray-800/50 rounded-2xl p-4 border border-gray-700/50">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex-1">
-                    <h3 className="text-2xl md:text-3xl font-black text-white mb-1">
-                      {isToday ? '🔥 오늘 경기!' : `${daysUntil}일 후`}
-                    </h3>
-                    <p className="text-base md:text-lg text-gray-300">{data.nextSchedule.title}</p>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-3xl md:text-4xl font-black text-red-500">
-                      {new Date(data.nextSchedule.date).getHours()}:{String(new Date(data.nextSchedule.date).getMinutes()).padStart(2, '0')}
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <h3 className="text-2xl md:text-2xl font-black mb-1">
+                          {new Date(data.nextSchedule.date).toLocaleDateString('ko-KR', { 
+                            month: 'long', 
+                            day: 'numeric'
+                          })} ({new Date(data.nextSchedule.date).toLocaleDateString('ko-KR', { 
+                            weekday: 'short' 
+                          })})
+                        </h3>
+                        {data.nextSchedule.attendances.find(a => a.user?.id === user.id) && (
+                          <span className={`inline-block mt-1 px-2 py-1 rounded-full text-xs font-semibold ${
+                            data.nextSchedule.attendances.find(a => a.user?.id === user.id)!.status === 'ATTEND' 
+                              ? 'bg-green-600/20 text-green-400 border border-green-600/50' 
+                              : 'bg-red-600/20 text-red-400 border border-red-600/50'
+                          }`}>
+                            {data.nextSchedule.attendances.find(a => a.user?.id === user.id)!.status === 'ATTEND' ? '참석 예정' : '불참 예정'}
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-right">
+                        <h3 className="text-2xl md:text-2xl font-black text-yellow-400">
+                          {new Date(data.nextSchedule.date).toLocaleTimeString('ko-KR', {
+                            hour: 'numeric',
+                            minute: '2-digit',
+                            hour12: true
+                          })}
+                        </h3>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -345,39 +528,54 @@ export function DashboardClient({ user }: { user: DashboardUser }) {
                   </div>
                 )}
                 
-                {/* 현재 참석 상태 */}
-                {data.nextSchedule.attendances.find(a => a.user?.id === user.id) && (
+                {/* 참석/불참 투표 버튼 */}
+                {!data.nextSchedule.attendances.find(a => a.user?.id === user.id) || showRevote ? (
+                  // 아직 투표하지 않았거나 재투표 모드
+                  <div className="grid grid-cols-2 gap-3">
+                    <Button
+                      onClick={() => {
+                        updateAttendance(data.nextSchedule!.id, 'ATTEND')
+                        setShowRevote(false)
+                      }}
+                      disabled={attendanceLoading || isFull}
+                      className={`h-10 ${isFull 
+                        ? 'bg-gray-600/50 text-gray-400 cursor-not-allowed' 
+                        : 'bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white shadow-lg hover:shadow-green-500/25 transition-all duration-300'
+                      } font-bold text-base rounded-xl`}
+                    >
+                      <Check className="w-4 h-4 mr-2" />
+                      참석하기
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        updateAttendance(data.nextSchedule!.id, 'ABSENT')
+                        setShowRevote(false)
+                      }}
+                      disabled={attendanceLoading || isFull}
+                      className={`h-10 ${isFull 
+                        ? 'bg-gray-600/50 text-gray-400 cursor-not-allowed' 
+                        : 'bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white shadow-lg hover:shadow-red-500/25 transition-all duration-300'
+                      } font-bold text-base rounded-xl`}
+                    >
+                      <X className="w-4 h-4 mr-2" />
+                      불참하기
+                    </Button>
+                  </div>
+                ) : (
+                  // 이미 투표한 경우 - 재투표하기 버튼
                   <div className="text-center">
-                    <Badge className={`${statusColors[data.nextSchedule.attendances.find(a => a.user?.id === user.id)!.status]} text-sm px-4 py-2 rounded-full font-semibold`}>
-                      현재 상태: {statusLabels[data.nextSchedule.attendances.find(a => a.user?.id === user.id)!.status]}
-                    </Badge>
+                    <Button
+                      onClick={() => setShowRevote(true)}
+                      disabled={attendanceLoading || isFull}
+                      className={`h-10 w-full ${isFull 
+                        ? 'bg-gray-600/50 text-gray-400 cursor-not-allowed' 
+                        : 'bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg hover:shadow-blue-500/25 transition-all duration-300'
+                      } font-bold text-base rounded-xl`}
+                    >
+                      🔄 재투표하기
+                    </Button>
                   </div>
                 )}
-                
-                <div className="grid grid-cols-2 gap-3">
-                  <Button
-                    onClick={() => updateAttendance(data.nextSchedule!.id, 'ATTEND')}
-                    disabled={attendanceLoading || isFull}
-                    className={`h-12 ${isFull 
-                      ? 'bg-gray-600/50 text-gray-400 cursor-not-allowed' 
-                      : 'bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white shadow-lg hover:shadow-green-500/25 transition-all duration-300'
-                    } font-bold text-base rounded-xl`}
-                  >
-                    <Check className="w-4 h-4 mr-2" />
-                    참석하기
-                  </Button>
-                  <Button
-                    onClick={() => updateAttendance(data.nextSchedule!.id, 'ABSENT')}
-                    disabled={attendanceLoading || isFull}
-                    className={`h-12 ${isFull 
-                      ? 'bg-gray-600/50 text-gray-400 cursor-not-allowed' 
-                      : 'bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white shadow-lg hover:shadow-red-500/25 transition-all duration-300'
-                    } font-bold text-base rounded-xl`}
-                  >
-                    <X className="w-4 h-4 mr-2" />
-                    불참하기
-                  </Button>
-                </div>
 
                 {/* 게스트 참석 버튼 (경기 2일 전부터 활성화) */}
                 {canGuestJoin && !isFull && (
@@ -450,20 +648,20 @@ export function DashboardClient({ user }: { user: DashboardUser }) {
 
                 {/* 관리자 전용 팀편성 기능 */}
                 {user.role === 'ADMIN' && data.nextSchedule._count.attendances >= 4 && (
-                  <div className="pt-3 border-t border-gray-700/50">
+                  <div className="pt-0 border-t border-gray-700/50">
                     {!showTeamFormation ? (
                       <Button
                         onClick={() => setShowTeamFormation(true)}
-                        className="w-full h-10 bg-gradient-to-r from-purple-600/80 to-purple-700/80 hover:from-purple-700 hover:to-purple-800 text-white font-semibold text-sm rounded-lg shadow-md hover:shadow-purple-500/25 transition-all duration-300"
+                        className="w-full h-10 bg-gradient-to-r text-md from-purple-600/80 to-purple-700/80 hover:from-purple-700 hover:to-purple-800 text-white font-semibold rounded-lg shadow-md hover:shadow-purple-500/25 transition-all duration-300"
                       >
-                        ⚽ 자동 팀편성
+                        ⚽ 자동팀편성
                       </Button>
                     ) : (
                       <div className="space-y-3">
                         <div className="text-center">
                           <p className="text-gray-300 text-sm mb-2">팀 수 선택</p>
-                          <div className="grid grid-cols-3 gap-2">
-                            {[2, 3, 4].map((count) => (
+                          <div className="grid grid-cols-2 gap-2">
+                            {[2, 3].map((count) => (
                               <button
                                 key={count}
                                 onClick={() => setTeamCount(count)}
@@ -502,7 +700,7 @@ export function DashboardClient({ user }: { user: DashboardUser }) {
                 )}
               </div>
 
-              {/* 참석자 명단 - 하단으로 이동 */}
+              {/* 참석자 명단 */}
               <div className="bg-gray-800/50 rounded-2xl p-4 border border-gray-700/50 mt-6">
                 <h4 className="text-lg font-bold text-white mb-3 flex items-center">
                   <Users className="w-4 h-4 mr-2 text-blue-500" />
@@ -521,24 +719,37 @@ export function DashboardClient({ user }: { user: DashboardUser }) {
                         <div className="grid grid-cols-4 gap-2">
                           {data.nextSchedule.attendances
                             .filter(a => a.status === 'ATTEND')
-                            .map((attendance, index) => (
-                              <div key={attendance.user?.id || `guest-${index}`} className="bg-green-600/20 border border-green-600/30 rounded-lg p-2 text-center relative group cursor-pointer">
-                                <div className="text-white text-xs font-medium truncate">
-                                  {attendance.user?.name || attendance.guestName || '이름없음'}
+                            .map((attendance, index) => {
+                              const isMe = attendance.user?.id === user.id
+                              return (
+                                <div 
+                                  key={attendance.user?.id || `guest-${index}`} 
+                                  className={`${
+                                    isMe 
+                                      ? 'bg-gradient-to-r from-yellow-600/30 to-yellow-500/30 border-2 border-yellow-500/60 shadow-lg shadow-yellow-500/20' 
+                                      : 'bg-green-600/20 border border-green-600/30'
+                                  } rounded-lg p-2 text-center relative group cursor-pointer`}
+                                >
+                                  <div className={`${isMe ? 'text-yellow-300 font-bold' : 'text-white'} text-xs font-medium truncate`}>
+                                    {attendance.user?.name || attendance.guestName || '이름없음'}
+                                  </div>
+                                  {attendance.guestName && (
+                                    <>
+                                      <Badge className="absolute -top-1 -right-1 bg-blue-600 text-white text-xs px-1 py-0 rounded-full font-bold w-4 h-4 flex items-center justify-center">
+                                        G
+                                      </Badge>
+                                      {/* 툴팁 - 초대한 사람 표시 */}
+                                      <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                                        게스트 참석자
+                                      </div>
+                                    </>
+                                  )}
+                                  {isMe && (
+                                    <div className="absolute -top-1 -left-1 w-3 h-3 bg-gradient-to-r from-yellow-400 to-yellow-500 rounded-full animate-pulse"></div>
+                                  )}
                                 </div>
-                                {attendance.guestName && (
-                                  <>
-                                    <Badge className="absolute -top-1 -right-1 bg-blue-600 text-white text-xs px-1 py-0 rounded-full font-bold w-4 h-4 flex items-center justify-center">
-                                      G
-                                    </Badge>
-                                    {/* 툴팁 - 초대한 사람 표시 */}
-                                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
-                                      게스트 참석자
-                                    </div>
-                                  </>
-                                )}
-                              </div>
-                            ))}
+                              )
+                            })}
                         </div>
                       </div>
                     )}
@@ -553,24 +764,37 @@ export function DashboardClient({ user }: { user: DashboardUser }) {
                         <div className="grid grid-cols-4 gap-2">
                           {data.nextSchedule.attendances
                             .filter(a => a.status === 'ABSENT')
-                            .map((attendance, index) => (
-                              <div key={attendance.user?.id || `guest-absent-${index}`} className="bg-red-600/20 border border-red-600/30 rounded-lg p-2 text-center relative group cursor-pointer">
-                                <div className="text-white text-xs font-medium truncate">
-                                  {attendance.user?.name || attendance.guestName || '이름없음'}
+                            .map((attendance, index) => {
+                              const isMe = attendance.user?.id === user.id
+                              return (
+                                <div 
+                                  key={attendance.user?.id || `guest-absent-${index}`} 
+                                  className={`${
+                                    isMe 
+                                      ? 'bg-gradient-to-r from-yellow-600/30 to-yellow-500/30 border-2 border-yellow-500/60 shadow-lg shadow-yellow-500/20' 
+                                      : 'bg-red-600/20 border border-red-600/30'
+                                  } rounded-lg p-2 text-center relative group cursor-pointer`}
+                                >
+                                  <div className={`${isMe ? 'text-yellow-300 font-bold' : 'text-white'} text-xs font-medium truncate`}>
+                                    {attendance.user?.name || attendance.guestName || '이름없음'}
+                                  </div>
+                                  {attendance.guestName && (
+                                    <>
+                                      <Badge className="absolute -top-1 -right-1 bg-blue-600 text-white text-xs px-1 py-0 rounded-full font-bold w-4 h-4 flex items-center justify-center">
+                                        G
+                                      </Badge>
+                                      {/* 툴팁 - 초대한 사람 표시 */}
+                                      <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                                        게스트 참석자
+                                      </div>
+                                    </>
+                                  )}
+                                  {isMe && (
+                                    <div className="absolute -top-1 -left-1 w-3 h-3 bg-gradient-to-r from-yellow-400 to-yellow-500 rounded-full animate-pulse"></div>
+                                  )}
                                 </div>
-                                {attendance.guestName && (
-                                  <>
-                                    <Badge className="absolute -top-1 -right-1 bg-blue-600 text-white text-xs px-1 py-0 rounded-full font-bold w-4 h-4 flex items-center justify-center">
-                                      G
-                                    </Badge>
-                                    {/* 툴팁 - 초대한 사람 표시 */}
-                                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
-                                      게스트 참석자
-                                    </div>
-                                  </>
-                                )}
-                              </div>
-                            ))}
+                              )
+                            })}
                         </div>
                       </div>
                     )}
@@ -585,24 +809,37 @@ export function DashboardClient({ user }: { user: DashboardUser }) {
                         <div className="grid grid-cols-4 gap-2">
                           {data.nextSchedule.attendances
                             .filter(a => a.status === 'PENDING')
-                            .map((attendance, index) => (
-                              <div key={attendance.user?.id || `guest-pending-${index}`} className="bg-yellow-600/20 border border-yellow-600/30 rounded-lg p-2 text-center relative group cursor-pointer">
-                                <div className="text-white text-xs font-medium truncate">
-                                  {attendance.user?.name || attendance.guestName || '이름없음'}
+                            .map((attendance, index) => {
+                              const isMe = attendance.user?.id === user.id
+                              return (
+                                <div 
+                                  key={attendance.user?.id || `guest-pending-${index}`} 
+                                  className={`${
+                                    isMe 
+                                      ? 'bg-gradient-to-r from-yellow-600/40 to-yellow-500/40 border-2 border-yellow-500/70 shadow-lg shadow-yellow-500/20' 
+                                      : 'bg-yellow-600/20 border border-yellow-600/30'
+                                  } rounded-lg p-2 text-center relative group cursor-pointer`}
+                                >
+                                  <div className={`${isMe ? 'text-yellow-200 font-bold' : 'text-white'} text-xs font-medium truncate`}>
+                                    {attendance.user?.name || attendance.guestName || '이름없음'}
+                                  </div>
+                                  {attendance.guestName && (
+                                    <>
+                                      <Badge className="absolute -top-1 -right-1 bg-blue-600 text-white text-xs px-1 py-0 rounded-full font-bold w-4 h-4 flex items-center justify-center">
+                                        G
+                                      </Badge>
+                                      {/* 툴팁 - 초대한 사람 표시 */}
+                                      <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                                        게스트 참석자
+                                      </div>
+                                    </>
+                                  )}
+                                  {isMe && (
+                                    <div className="absolute -top-1 -left-1 w-3 h-3 bg-gradient-to-r from-yellow-400 to-yellow-500 rounded-full animate-pulse"></div>
+                                  )}
                                 </div>
-                                {attendance.guestName && (
-                                  <>
-                                    <Badge className="absolute -top-1 -right-1 bg-blue-600 text-white text-xs px-1 py-0 rounded-full font-bold w-4 h-4 flex items-center justify-center">
-                                      G
-                                    </Badge>
-                                    {/* 툴팁 - 초대한 사람 표시 */}
-                                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
-                                      게스트 참석자
-                                    </div>
-                                  </>
-                                )}
-                              </div>
-                            ))}
+                              )
+                            })}
                         </div>
                       </div>
                     )}
@@ -611,6 +848,154 @@ export function DashboardClient({ user }: { user: DashboardUser }) {
                   <p className="text-gray-400 text-center py-4 text-sm">아직 참석 응답이 없습니다</p>
                 )}
               </div>
+
+              {/* 댓글 섹션 */}
+              <div className="bg-gray-800/50 rounded-2xl p-4 border border-gray-700/50">
+                <div className="flex items-center justify-between mb-4">
+                  <h4 className="text-lg font-bold text-white flex items-center">
+                    <MessageCircle className="w-4 h-4 mr-2 text-green-500" />
+                    Comments
+                  </h4>
+                  <Button
+                    onClick={() => {
+                      if (!showComments) {
+                        fetchComments(data.nextSchedule!.id)
+                      }
+                      setShowComments(!showComments)
+                    }}
+                    className="text-xs px-3 py-1 bg-gray-600/50 text-gray-300 hover:bg-gray-600 hover:text-white rounded"
+                  >
+                    {showComments ? '닫기' : '댓글 보기'}
+                  </Button>
+                </div>
+
+                {showComments && (
+                  <div className="space-y-4">
+                    {/* 댓글 작성 */}
+                    <div className="space-y-3">
+                      <textarea
+                        value={newComment}
+                        onChange={(e) => setNewComment(e.target.value)}
+                        placeholder="경기에 대한 의견이나 질문을 남겨주세요... (500자 이내)"
+                        maxLength={500}
+                        className="w-full px-3 py-2 bg-gray-900/50 border border-gray-600/50 rounded-lg text-white placeholder-gray-400 focus:border-green-500 text-sm resize-none"
+                        rows={3}
+                      />
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-gray-400">
+                          {newComment.length}/500자
+                        </span>
+                        <Button
+                          onClick={() => addComment(data.nextSchedule!.id)}
+                          disabled={commentLoading || !newComment.trim()}
+                          className="h-8 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-semibold text-xs rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <Send className="w-3 h-3 mr-1" />
+                          {commentLoading ? '등록중...' : '댓글 등록'}
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* 댓글 목록 */}
+                    <div className="border-t border-gray-700/50 pt-4">
+                      {comments.length > 0 ? (
+                        <div className="space-y-3 max-h-80 overflow-y-auto">
+                          {comments.map((comment) => (
+                            <div key={comment.id} className="bg-gray-900/30 rounded-lg p-3 border border-gray-700/30">
+                              <div className="flex items-center justify-between mb-2">
+                                <div className="flex items-center space-x-2">
+                                  <span className="text-white font-medium text-sm">
+                                    {comment.user.name || '이름없음'}
+                                  </span>
+                                </div>
+                                <span className="text-xs text-gray-400">
+                                  {new Date(comment.createdAt).toLocaleDateString('ko-KR', { 
+                                    month: 'short', 
+                                    day: 'numeric',
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                  })}
+                                </span>
+                              </div>
+                              <p className="text-gray-300 text-sm leading-relaxed whitespace-pre-wrap">
+                                {comment.content}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-gray-400 text-center py-6 text-sm">
+                          아직 댓글이 없습니다. 첫 번째 댓글을 남겨보세요! 💬
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* 팀편성 결과 - 댓글 아래로 이동 */}
+              {showTeams && teams.length > 0 && (
+                <div className="bg-gradient-to-br from-purple-900/70 to-purple-800/70 border-purple-500/20 backdrop-blur-sm shadow-lg rounded-2xl p-4 border border-purple-500/30">
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="text-lg font-bold text-white flex items-center">
+                      ⚽ 팀편성 결과
+                    </h4>
+                    <Button
+                      onClick={() => setShowTeams(false)}
+                      className="text-xs px-2 py-1 bg-gray-600/50 text-gray-300 hover:bg-gray-600 hover:text-white rounded"
+                    >
+                      닫기
+                    </Button>
+                  </div>
+                  <div className="space-y-4">
+                    {teams.map((team) => {
+                      // 팀 색상 정의
+                      const getTeamColor = (teamNumber: number, totalTeams: number) => {
+                        if (totalTeams === 2) {
+                          return teamNumber === 1 
+                            ? { bg: 'bg-gray-100', text: 'text-black', border: 'border-gray-300', name: 'WHITE' }
+                            : { bg: 'bg-gray-900', text: 'text-white', border: 'border-gray-700', name: 'BLACK' }
+                        } else if (totalTeams === 3) {
+                          switch (teamNumber) {
+                            case 1: return { bg: 'bg-gray-100', text: 'text-black', border: 'border-gray-300', name: 'WHITE' }
+                            case 2: return { bg: 'bg-gray-900', text: 'text-white', border: 'border-gray-700', name: 'BLACK' }
+                            case 3: return { bg: 'bg-orange-500', text: 'text-white', border: 'border-orange-600', name: 'ORANGE' }
+                            default: return { bg: 'bg-gray-800', text: 'text-white', border: 'border-gray-600', name: `TEAM ${teamNumber}` }
+                          }
+                        } else {
+                          // 4팀 이상은 기본 색상
+                          return { bg: 'bg-gray-800', text: 'text-white', border: 'border-gray-600', name: `TEAM ${teamNumber}` }
+                        }
+                      }
+
+                      const teamColor = getTeamColor(team.teamNumber, teams.length)
+
+                      return (
+                        <div key={team.id} className={`${teamColor.bg} rounded-xl p-4 border-2 ${teamColor.border} shadow-lg`}>
+                          <div className="flex items-center justify-between mb-3">
+                            <h4 className={`text-lg font-bold ${teamColor.text}`}>
+                              {teamColor.name}
+                            </h4>
+                            <div className={`text-sm ${teamColor.text} opacity-80`}>
+                              {team.members.length}명
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-3 md:grid-cols-6 lg:grid-cols-9 gap-2">
+                            {team.members.map((member: TeamMember) => (
+                              <div key={member.id} className={`${teamColor.text === 'text-black' ? 'bg-gray-200/50' : 'bg-gray-700/50'} rounded-lg p-2 text-center`}>
+                                <span className={`text-xs font-semibold ${teamColor.text} block truncate`}>
+                                  {member.user?.name || member.guestName}
+                                  {member.guestName && <span className={`block text-xs ${teamColor.text === 'text-black' ? 'text-gray-600' : 'text-gray-400'}`}>(게스트)</span>}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
           ) : (
             <div className="text-center py-12">
@@ -639,136 +1024,90 @@ export function DashboardClient({ user }: { user: DashboardUser }) {
                 const daysUntil = Math.ceil((scheduleDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
                 const userAttendance = schedule.attendances[0]
                 
-                return (
-                  <div key={schedule.id} className="bg-gray-800/30 rounded-lg p-3 border border-gray-700/30 hover:border-gray-600/50 transition-all duration-300">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex-1">
-                        <h4 className="text-sm font-semibold text-white mb-1">
-                          {schedule.title}
-                        </h4>
-                        <div className="flex items-center space-x-3 text-xs text-gray-400">
-                          <span>{daysUntil}일 후</span>
-                          <span className="flex items-center">
-                            <MapPin className="w-3 h-3 mr-1" />
-                            {schedule.location}
-                          </span>
-                          <span className="flex items-center">
-                            <Users className="w-3 h-3 mr-1" />
-                            {schedule._count.attendances}명
-                          </span>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-sm font-bold text-gray-300">
-                          {scheduleDate.getHours()}:{String(scheduleDate.getMinutes()).padStart(2, '0')}
-                        </div>
-                        <div className="text-xs text-gray-500">
-                          {scheduleDate.toLocaleDateString('ko-KR', { 
-                            month: 'short', 
-                            day: 'numeric'
-                          })}
-                        </div>
-                      </div>
-                    </div>
-                    
-                    {/* 간단한 참석 투표 버튼 */}
-                    <div className="flex items-center justify-between">
-                      {userAttendance && (
-                        <Badge className={`${statusColors[userAttendance.status]} text-xs px-2 py-1 rounded font-semibold`}>
-                          {statusLabels[userAttendance.status]}
-                        </Badge>
-                      )}
-                      <div className="flex space-x-2 ml-auto">
-                        <button
-                          onClick={() => updateAttendance(schedule.id, 'ATTEND')}
-                          disabled={attendanceLoading}
-                          className="px-3 py-1 bg-green-600/20 border border-green-600/50 text-green-400 hover:bg-green-600 hover:text-white transition-all duration-300 text-xs rounded font-semibold"
-                        >
-                          참석
-                        </button>
-                        <button
-                          onClick={() => updateAttendance(schedule.id, 'ABSENT')}
-                          disabled={attendanceLoading}
-                          className="px-3 py-1 bg-red-600/20 border border-red-600/50 text-red-400 hover:bg-red-600 hover:text-white transition-all duration-300 text-xs rounded font-semibold"
-                        >
-                          불참
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                )
+                 return (
+                   <div key={schedule.id} className="bg-gray-800/30 rounded-lg p-3 border border-gray-700/30 hover:border-gray-600/50 transition-all duration-300">
+                     <div className="flex items-center justify-between mb-2">
+                       <div className="flex-1">
+                         <div className="flex items-center justify-between">
+                           <h4 className="text-sm font-semibold text-white mb-1">
+                             {schedule.title}
+                           </h4>
+                           {/* 관리자 전용 수정/삭제 버튼 */}
+                           {user.role === 'ADMIN' && (
+                             <div className="flex items-center space-x-1">
+                               <button
+                                 onClick={() => handleEditSchedule(schedule.id)}
+                                 className="p-1 text-blue-400 hover:text-blue-300 hover:bg-blue-600/20 rounded transition-all duration-200"
+                                 title="수정"
+                               >
+                                 <Edit3 className="w-3 h-3" />
+                               </button>
+                               <button
+                                 onClick={() => handleDeleteSchedule(schedule.id)}
+                                 className="p-1 text-red-400 hover:text-red-300 hover:bg-red-600/20 rounded transition-all duration-200"
+                                 title="삭제"
+                               >
+                                 <Trash2 className="w-3 h-3" />
+                               </button>
+                             </div>
+                           )}
+                         </div>
+                         <div className="flex items-center space-x-3 text-xs text-gray-400">
+                           <span>{daysUntil}일 후</span>
+                           <span className="flex items-center">
+                             <MapPin className="w-3 h-3 mr-1" />
+                             {schedule.location}
+                           </span>
+                           <span className="flex items-center">
+                             <Users className="w-3 h-3 mr-1" />
+                             {schedule._count.attendances}명
+                           </span>
+                         </div>
+                       </div>
+                       <div className="text-right">
+                         <div className="text-sm font-bold text-gray-300">
+                           {scheduleDate.getHours()}:{String(scheduleDate.getMinutes()).padStart(2, '0')}
+                         </div>
+                         <div className="text-xs text-gray-500">
+                           {scheduleDate.toLocaleDateString('ko-KR', { 
+                             month: 'short', 
+                             day: 'numeric'
+                           })}
+                         </div>
+                       </div>
+                     </div>
+                     
+                     {/* 간단한 참석 투표 버튼 */}
+                     <div className="flex items-center justify-between">
+                       {userAttendance && (
+                         <Badge className={`${statusColors[userAttendance.status]} text-xs px-2 py-1 rounded font-semibold`}>
+                           {statusLabels[userAttendance.status]}
+                         </Badge>
+                       )}
+                       <div className="flex space-x-2 ml-auto">
+                         <button
+                           onClick={() => updateAttendance(schedule.id, 'ATTEND')}
+                           disabled={attendanceLoading}
+                           className="px-3 py-1 bg-green-600/20 border border-green-600/50 text-green-400 hover:bg-green-600 hover:text-white transition-all duration-300 text-xs rounded font-semibold"
+                         >
+                           참석
+                         </button>
+                         <button
+                           onClick={() => updateAttendance(schedule.id, 'ABSENT')}
+                           disabled={attendanceLoading}
+                           className="px-3 py-1 bg-red-600/20 border border-red-600/50 text-red-400 hover:bg-red-600 hover:text-white transition-all duration-300 text-xs rounded font-semibold"
+                         >
+                           불참
+                         </button>
+                       </div>
+                     </div>
+                   </div>
+                 )
               })}
             </CardContent>
           </Card>
         )}
 
-        {/* 팀편성 결과 */}
-        {showTeams && teams.length > 0 && (
-          <Card className="bg-gradient-to-br from-purple-900/70 to-purple-800/70 border-purple-500/20 backdrop-blur-sm shadow-lg">
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-lg font-bold text-white flex items-center">
-                  ⚽ 팀편성 결과
-                </CardTitle>
-                <Button
-                  onClick={() => setShowTeams(false)}
-                  className="text-xs px-2 py-1 bg-gray-600/50 text-gray-300 hover:bg-gray-600 hover:text-white rounded"
-                >
-                  닫기
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {teams.map((team) => {
-                  // 팀 색상 정의
-                  const getTeamColor = (teamNumber: number, totalTeams: number) => {
-                    if (totalTeams === 2) {
-                      return teamNumber === 1 
-                        ? { bg: 'bg-gray-100', text: 'text-black', border: 'border-gray-300', name: 'WHITE' }
-                        : { bg: 'bg-gray-900', text: 'text-white', border: 'border-gray-700', name: 'BLACK' }
-                    } else if (totalTeams === 3) {
-                      switch (teamNumber) {
-                        case 1: return { bg: 'bg-gray-100', text: 'text-black', border: 'border-gray-300', name: 'WHITE' }
-                        case 2: return { bg: 'bg-gray-900', text: 'text-white', border: 'border-gray-700', name: 'BLACK' }
-                        case 3: return { bg: 'bg-orange-500', text: 'text-white', border: 'border-orange-600', name: 'ORANGE' }
-                        default: return { bg: 'bg-gray-800', text: 'text-white', border: 'border-gray-600', name: `TEAM ${teamNumber}` }
-                      }
-                    } else {
-                      // 4팀 이상은 기본 색상
-                      return { bg: 'bg-gray-800', text: 'text-white', border: 'border-gray-600', name: `TEAM ${teamNumber}` }
-                    }
-                  }
-
-                  const teamColor = getTeamColor(team.teamNumber, teams.length)
-
-                  return (
-                    <div key={team.id} className={`${teamColor.bg} rounded-xl p-4 border-2 ${teamColor.border} shadow-lg`}>
-                      <div className="text-center mb-3">
-                        <h4 className={`text-lg font-bold mb-1 ${teamColor.text}`}>
-                          {teamColor.name}
-                        </h4>
-                        <div className={`text-sm ${teamColor.text} opacity-80`}>
-                          {team.members.length}명
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        {team.members.map((member: TeamMember) => (
-                          <div key={member.id} className={`${teamColor.text === 'text-black' ? 'bg-gray-200/50' : 'bg-gray-700/50'} rounded-lg p-2 text-center`}>
-                            <span className={`text-sm font-semibold ${teamColor.text} flex items-center justify-center`}>
-                              {member.user?.name || member.guestName}
-                              {member.guestName && <span className="ml-1 text-blue-500 text-xs">👥</span>}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            </CardContent>
-          </Card>
-        )}
     </div>
   )
 }

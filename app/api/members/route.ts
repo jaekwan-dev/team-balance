@@ -19,12 +19,10 @@ export async function GET() {
       select: {
         id: true,
         name: true,
-        image: true, // 카카오 프로필 사진
         email: session.user.role === 'ADMIN' ? true : false, // 관리자만 이메일 조회
         phone: session.user.role === 'ADMIN' ? true : false, // 관리자만 전화번호 조회
         level: true,
         role: true,
-        position: true,
         isProfileComplete: true,
         createdAt: true,
       },

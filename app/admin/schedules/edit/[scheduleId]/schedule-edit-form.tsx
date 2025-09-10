@@ -1,7 +1,7 @@
 "use client"
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
@@ -68,19 +68,32 @@ const timeOptions = [
   { value: "00:00", label: "오후 12:00" },
 ]
 
-export function ScheduleCreateForm() {
+interface Schedule {
+  id: string
+  title: string
+  date: Date
+  location: string
+  description: string | null
+  maxParticipants: number | null
+}
+
+export default function ScheduleEditForm({ schedule }: { schedule: Schedule }) {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false)
 
+  const scheduleDate = new Date(schedule.date)
+  const timeString = `${String(scheduleDate.getHours()).padStart(2, '0')}:${String(scheduleDate.getMinutes()).padStart(2, '0')}`
+
   const form = useForm<ScheduleFormData>({
     resolver: zodResolver(scheduleSchema),
     defaultValues: {
-      time: "",
-      location: "",
-      maxParticipants: undefined, // 빈 값으로 시작
-      description: "",
-    } as Partial<ScheduleFormData>,
+      date: scheduleDate,
+      time: timeString,
+      location: schedule.location,
+      maxParticipants: schedule.maxParticipants || 15,
+      description: schedule.description || '',
+    },
   })
 
   const onSubmit = async (data: ScheduleFormData) => {
@@ -113,22 +126,22 @@ export function ScheduleCreateForm() {
         description: data.description?.trim() || null,
       }
 
-      const response = await fetch("/api/schedules", {
-        method: "POST",
+      const response = await fetch(`/api/schedules/${schedule.id}`, {
+        method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(scheduleData),
       })
 
       if (response.ok) {
-        alert("일정이 성공적으로 등록되었습니다!")
+        alert("일정이 성공적으로 수정되었습니다!")
         router.push("/")
       } else {
         const error = await response.json()
-        alert(error.error || "일정 등록에 실패했습니다")
+        alert(error.error || "일정 수정에 실패했습니다")
       }
     } catch (error) {
-      console.error("Schedule creation error:", error)
-      alert("일정 등록 중 오류가 발생했습니다")
+      console.error("Schedule edit error:", error)
+      alert("일정 수정 중 오류가 발생했습니다")
     } finally {
       setIsLoading(false)
     }
@@ -138,10 +151,10 @@ export function ScheduleCreateForm() {
     <Card className="bg-black/90 border-red-600/50 backdrop-blur-sm shadow-2xl">
       <CardHeader className="text-center border-b border-red-600/30 pb-6">
         <CardTitle className="text-2xl font-black text-white tracking-tight">
-          새로운 경기 일정 등록
+          경기 일정 수정
         </CardTitle>
         <CardDescription className="text-gray-400 font-medium">
-          팀원들과 함께할 경기 일정을 등록해주세요
+          기존 경기 일정을 수정해주세요
         </CardDescription>
       </CardHeader>
       <CardContent className="pt-6">
@@ -300,6 +313,9 @@ export function ScheduleCreateForm() {
               name="description"
               render={({ field }) => (
                 <FormItem>
+                  <FormLabel className="text-gray-200 font-bold tracking-wider flex items-center">
+                    📢 공지사항
+                  </FormLabel>
                   <FormControl>
                     <textarea
                       {...field}
@@ -313,7 +329,7 @@ export function ScheduleCreateForm() {
               )}
             />
 
-            {/* 등록/취소 버튼 */}
+            {/* 수정/취소 버튼 */}
             <div className="flex space-x-4">
               <Button
                 type="submit"
@@ -323,12 +339,12 @@ export function ScheduleCreateForm() {
                 {isLoading ? (
                   <div className="flex items-center">
                     <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-3"></div>
-                    등록 중...
+                    수정 중...
                   </div>
                 ) : (
                   <div className="flex items-center">
                     <Save className="w-5 h-5 mr-3" />
-                    일정 등록하기
+                    일정 수정하기
                   </div>
                 )}
               </Button>

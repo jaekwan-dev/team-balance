@@ -16,8 +16,22 @@ export const config = {
     KakaoProvider({
       clientId: process.env.KAKAO_CLIENT_ID!,
       clientSecret: process.env.KAKAO_CLIENT_SECRET!,
+      checks: ["pkce", "state"],
     }),
   ],
+  trustHost: true,
+  cookies: {
+    pkceCodeVerifier: {
+      name: "authjs.pkce.code_verifier",
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        secure: process.env.NODE_ENV === "production",
+      },
+    },
+  },
+  debug: process.env.NODE_ENV === "development",
   experimental: {
     enableWebAuthn: false,
   },

@@ -1,9 +1,10 @@
-import { auth, signOut } from "@/lib/auth"
+import { auth, signOut, signIn } from "@/lib/auth"
 import { Button } from "@/components/ui/button"
-import { LogOut, Zap, User, Users, Menu, Calendar } from "lucide-react"
+import { LogOut, Zap, User, Users, Menu, Calendar, MessageCircle } from "lucide-react"
 import { DashboardClient } from "@/app/dashboard-client"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import Link from "next/link"
+import { FaFutbol } from "react-icons/fa"
 
 export default async function Home() {
   const session = await auth()
@@ -12,19 +13,26 @@ export default async function Home() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-red-900 flex items-center justify-center">
         <div className="text-center">
-          <div className="w-16 h-16 bg-gradient-to-r from-red-600 to-red-800 rounded-lg flex items-center justify-center mx-auto mb-6">
-            <Zap className="w-10 h-10 text-white" />
+          <div className="w-20 h-20 bg-gradient-to-r from-red-600 to-red-800 rounded-full flex items-center justify-center mx-auto mb-6 shadow-2xl">
+            <FaFutbol className="w-12 h-12 text-white" />
           </div>
           <h1 className="text-4xl font-black text-white tracking-tight mb-4">
             PPUNG<span className="text-red-500">BROS</span>
           </h1>
-          <p className="text-gray-300 mb-8">축구팀 밸런스 관리 시스템</p>
-          <a
-            href="/auth/signin"
-            className="inline-flex items-center px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg transition-all duration-300"
+          <p className="text-gray-300 mb-8">뻥브로스</p>
+          <form
+            action={async () => {
+              "use server"
+              await signIn("kakao", { redirectTo: "/" })
+            }}
           >
-            로그인하여 시작하기
-          </a>
+            <Button
+              type="submit"
+              className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-yellow-500 to-yellow-400 hover:from-yellow-600 hover:to-yellow-500 text-black font-bold rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg"
+            >
+              카카오로 로그인하기
+            </Button>
+          </form>
         </div>
       </div>
     )
@@ -102,7 +110,7 @@ export default async function Home() {
                               <form
                                 action={async () => {
                                   "use server"
-                                  await signOut({ redirectTo: "/auth/signin" })
+                                  await signOut({ redirectTo: "/" })
                                 }}
                                 className="w-full"
                               >

@@ -12,7 +12,6 @@ interface UserProfile {
   email: string | null
   level: Level
   role: Role
-  position: string | null
   phone: string | null
   isProfileComplete: boolean
   createdAt: string
@@ -217,11 +216,6 @@ export function ProfileClient({ userId }: { userId: string }) {
                   {user.role === 'ADMIN' && (
                     <Badge className="bg-gradient-to-r from-yellow-600 to-yellow-700 text-white font-bold px-4 py-2 text-lg rounded-full shadow-lg">
                       👑 관리자
-                    </Badge>
-                  )}
-                  {user.position && (
-                    <Badge className="bg-gradient-to-r from-blue-600 to-blue-700 text-white font-bold px-4 py-2 text-lg rounded-full shadow-lg">
-                      {user.position}
                     </Badge>
                   )}
                 </div>
