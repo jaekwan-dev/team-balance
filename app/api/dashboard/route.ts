@@ -149,7 +149,7 @@ export async function GET() {
 
     // 참석률 계산
     const totalAttendances = userAttendanceStats.length
-    const attendedCount = userAttendanceStats.filter(a => a.status === 'ATTEND').length
+    const attendedCount = userAttendanceStats.filter((a: { status: string }) => a.status === 'ATTEND').length
     const attendanceRate = totalAttendances > 0 ? Math.round((attendedCount / totalAttendances) * 100) : 0
 
     return NextResponse.json({
