@@ -1,6 +1,6 @@
 import { auth, signOut, signIn } from "@/auth"
 import { Button } from "@/components/ui/button"
-import { LogOut, Zap, User, Users, Menu, Calendar, Plus } from "lucide-react"
+import { LogOut, Zap, User, Users, Menu, Calendar, Home } from "lucide-react"
 import { DashboardClient } from "@/app/dashboard-client"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import Link from "next/link"
@@ -76,6 +76,13 @@ export default async function Home() {
                               {session.user.name || '사용자'} ({session.user.level})
                             </DropdownMenuLabel>
                             <DropdownMenuSeparator />
+                            
+                            <DropdownMenuItem asChild>
+                              <Link href="/" className="flex items-center">
+                                <Home className="w-4 h-4 mr-2" />
+                                홈
+                              </Link>
+                            </DropdownMenuItem>
                             
                             <DropdownMenuItem asChild>
                               <Link href={`/profile/${session.user.id}`} className="flex items-center">

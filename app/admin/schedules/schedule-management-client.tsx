@@ -102,15 +102,6 @@ export function ScheduleManagementClient() {
   return (
     <div className="space-y-6">
       {/* 헤더 통계 */}
-    <div className="flex items-center justify-end pr-2">
-        <Button 
-        onClick={() => router.push('/admin/schedules/create')}
-        className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-bold"
-        >
-        <Plus className="w-4 h-4 mr-2" />
-        새 일정 등록
-        </Button>
-    </div>
       {/* 일정 목록 */}
       {sortedSchedules.length > 0 ? (
         <div className="space-y-4">
@@ -211,13 +202,6 @@ export function ScheduleManagementClient() {
           <p className="text-gray-400 text-lg mb-6">
             첫 번째 경기 일정을 등록해보세요!
           </p>
-          <Button 
-            onClick={() => router.push('/admin/schedules/create')}
-            className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-bold"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            일정 등록하기
-          </Button>
         </div>
       )}
     </div>
