@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Users, Timer, MapPin, Clock, Check, X, Clock as ClockIcon, Edit3, Trash2, MessageCircle, Send } from "lucide-react"
+import { Users, Timer, MapPin, Clock, Check, X, Clock as ClockIcon, Edit3, Trash2, MessageCircle, Send, UserX } from "lucide-react"
 import { Level, Role, AttendanceStatus } from "@prisma/client"
 
 interface DashboardUser {
@@ -25,7 +25,9 @@ interface Schedule {
     attendances: number
   }
   attendances: {
+    id: string
     status: AttendanceStatus
+    userId?: string | null
     user?: {
       id: string
       name: string | null
@@ -124,6 +126,7 @@ export function DashboardClient({ user }: { user: DashboardUser }) {
   const [newComment, setNewComment] = useState('')
   const [commentLoading, setCommentLoading] = useState(false)
   const [showRevote, setShowRevote] = useState(false)
+  const [deletingGuest, setDeletingGuest] = useState<string | null>(null)
 
   useEffect(() => {
     fetchDashboardData()
@@ -162,20 +165,22 @@ export function DashboardClient({ user }: { user: DashboardUser }) {
       })
 
       if (response.ok) {
-        // 참석자 변경으로 기존 팀편성 무효화 (서버에서도 삭제)
-        try {
-          await fetch(`/api/schedules/${scheduleId}/teams/clear`, {
-            method: 'DELETE'
-          })
-        } catch (clearError) {
-          console.error('팀편성 삭제 실패:', clearError)
-        }
-        
+        // 즉시 UI 업데이트 (팀편성 숨김)
         setShowTeams(false)
         setTeams([])
-        // 대시보드 데이터 새로고침
-        await fetchDashboardData()
+        
+        // 백그라운드에서 팀편성 삭제 (기다리지 않음)
+        fetch(`/api/schedules/${scheduleId}/teams/clear`, {
+          method: 'DELETE'
+        }).catch(clearError => {
+          console.error('팀편성 삭제 실패:', clearError)
+        })
+        
+        // 피드백 먼저 표시
         alert(status === 'ATTEND' ? '참석으로 등록되었습니다!' : '불참으로 등록되었습니다!')
+        
+        // 데이터 새로고침 후 UI 업데이트
+        await fetchDashboardData()
       } else {
         const error = await response.json()
         alert(error.error || '참석 상태 업데이트에 실패했습니다')
@@ -214,20 +219,21 @@ export function DashboardClient({ user }: { user: DashboardUser }) {
         setGuestLevel('ROOKIE')
         setShowGuestForm(false)
         
-        // 참석자 변경으로 기존 팀편성 무효화 (서버에서도 삭제)
-        try {
-          await fetch(`/api/schedules/${scheduleId}/teams/clear`, {
-            method: 'DELETE'
-          })
-        } catch (clearError) {
-          console.error('팀편성 삭제 실패:', clearError)
-        }
-        
+        // 즉시 UI 업데이트
         setShowTeams(false)
         setTeams([])
-        // 대시보드 데이터 새로고침
-        await fetchDashboardData()
+        
+        // 백그라운드에서 팀편성 삭제 (기다리지 않음)
+        fetch(`/api/schedules/${scheduleId}/teams/clear`, {
+          method: 'DELETE'
+        }).catch(clearError => {
+          console.error('팀편성 삭제 실패:', clearError)
+        })
+        
         alert('게스트 참석이 등록되었습니다!')
+        
+        // 백그라운드에서 데이터 새로고침
+        fetchDashboardData()
       } else {
         alert('게스트 참석 등록에 실패했습니다')
       }
@@ -367,6 +373,37 @@ export function DashboardClient({ user }: { user: DashboardUser }) {
     }
   }
 
+  const deleteGuestAttendance = async (attendanceId: string, guestName: string) => {
+    if (!confirm(`게스트 "${guestName}"의 참석을 취소하시겠습니까?`)) {
+      return
+    }
+
+    setDeletingGuest(attendanceId)
+    try {
+      const response = await fetch(`/api/schedules/${data?.nextSchedule?.id}/attendance/${attendanceId}`, {
+        method: 'DELETE',
+      })
+
+      if (response.ok) {
+        // 즉시 UI 업데이트
+        setShowTeams(false)
+        setTeams([])
+        
+        alert('게스트 참석이 취소되었습니다!')
+        
+        // 백그라운드에서 데이터 새로고침
+        fetchDashboardData()
+      } else {
+        const error = await response.json()
+        alert(error.error || '게스트 참석 취소에 실패했습니다.')
+      }
+    } catch (error) {
+      console.error('게스트 참석 취소 실패:', error)
+      alert('게스트 참석 취소에 실패했습니다.')
+    } finally {
+      setDeletingGuest(null)
+    }
+  }
 
   if (loading) {
     return (
@@ -438,18 +475,6 @@ export function DashboardClient({ user }: { user: DashboardUser }) {
         <CardContent className="space-y-6">
           {data.nextSchedule ? (
             <div className="space-y-4">
-              {/* 공지사항 - 상단에 별도 표시 */}
-              {data.nextSchedule.description && (
-                <div className="bg-gradient-to-r from-orange-900/30 to-orange-800/30 rounded-2xl p-4 border border-orange-500/50 shadow-lg">
-                  <div className="flex items-start">
-                    <span className="text-orange-400 text-lg mr-3 flex-shrink-0 mt-0.5">📢</span>
-                    <div className="flex-1">
-                      <h4 className="text-orange-300 font-bold text-sm mb-2">공지사항</h4>
-                      <p className="text-orange-100 text-sm leading-relaxed whitespace-pre-wrap">{data.nextSchedule.description}</p>
-                    </div>
-                  </div>
-                </div>
-              )}
 
               {/* 경기 기본 정보 - 모바일 최적화 */}
               <div className="bg-gray-800/50 rounded-2xl p-4 border border-gray-700/50">
@@ -465,7 +490,7 @@ export function DashboardClient({ user }: { user: DashboardUser }) {
                             weekday: 'short' 
                           })})
                         </h3>
-                        {data.nextSchedule.attendances.find(a => a.user?.id === user.id) && (
+                        {data.nextSchedule.attendances.find(a => a.user?.id === user.id) && !attendanceLoading && (
                           <span className={`inline-block mt-1 px-2 py-1 rounded-full text-xs font-semibold ${
                             data.nextSchedule.attendances.find(a => a.user?.id === user.id)!.status === 'ATTEND' 
                               ? 'bg-green-600/20 text-green-400 border border-green-600/50' 
@@ -473,6 +498,14 @@ export function DashboardClient({ user }: { user: DashboardUser }) {
                           }`}>
                             {data.nextSchedule.attendances.find(a => a.user?.id === user.id)!.status === 'ATTEND' ? '참석 예정' : '불참 예정'}
                           </span>
+                        )}
+                        {attendanceLoading && (
+                          <div className="inline-block mt-1 px-2 py-1 bg-gray-600/20 text-gray-400 border border-gray-600/50 rounded-full text-xs font-semibold">
+                            <div className="flex items-center">
+                              <div className="w-3 h-3 border border-gray-400 border-t-transparent rounded-full animate-spin mr-1"></div>
+                              투표 중...
+                            </div>
+                          </div>
                         )}
                       </div>
                       <div className="text-right">
@@ -527,9 +560,23 @@ export function DashboardClient({ user }: { user: DashboardUser }) {
                     </Badge>
                   </div>
                 )}
+
+                
+              {/* 공지사항 - 상단에 별도 표시 */}
+              {data.nextSchedule.description && (
+                <div className="bg-gradient-to-r from-orange-900/30 to-orange-800/30 rounded-2xl p-4 border border-orange-500/50 shadow-lg">
+                  <div className="flex items-start">
+                    <span className="text-orange-400 text-lg mr-3 flex-shrink-0 mt-0.5">📢</span>
+                    <div className="flex-1">
+                      <h4 className="text-orange-300 font-bold text-sm mb-2">공지사항</h4>
+                      <p className="text-orange-100 text-sm leading-relaxed whitespace-pre-wrap">{data.nextSchedule.description}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
                 
                 {/* 참석/불참 투표 버튼 */}
-                {!data.nextSchedule.attendances.find(a => a.user?.id === user.id) || showRevote ? (
+                {(!data.nextSchedule.attendances.find(a => a.user?.id === user.id) || showRevote) && !attendanceLoading ? (
                   // 아직 투표하지 않았거나 재투표 모드
                   <div className="grid grid-cols-2 gap-3">
                     <Button
@@ -543,7 +590,11 @@ export function DashboardClient({ user }: { user: DashboardUser }) {
                         : 'bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white shadow-lg hover:shadow-green-500/25 transition-all duration-300'
                       } font-bold text-base rounded-xl`}
                     >
-                      <Check className="w-4 h-4 mr-2" />
+                      {attendanceLoading ? (
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                      ) : (
+                        <Check className="w-4 h-4 mr-2" />
+                      )}
                       참석하기
                     </Button>
                     <Button
@@ -557,7 +608,11 @@ export function DashboardClient({ user }: { user: DashboardUser }) {
                         : 'bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white shadow-lg hover:shadow-red-500/25 transition-all duration-300'
                       } font-bold text-base rounded-xl`}
                     >
-                      <X className="w-4 h-4 mr-2" />
+                      {attendanceLoading ? (
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                      ) : (
+                        <X className="w-4 h-4 mr-2" />
+                      )}
                       불참하기
                     </Button>
                   </div>
@@ -572,24 +627,24 @@ export function DashboardClient({ user }: { user: DashboardUser }) {
                         : 'bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg hover:shadow-blue-500/25 transition-all duration-300'
                       } font-bold text-base rounded-xl`}
                     >
-                      🔄 재투표하기
+                      재투표하기
                     </Button>
                   </div>
                 )}
 
                 {/* 게스트 참석 버튼 (경기 2일 전부터 활성화) */}
                 {canGuestJoin && !isFull && (
-                  <div className="pt-2 border-t border-gray-700/50">
+                  <div className="pt-0 border-t border-gray-700/50">
                     {!showGuestForm ? (
                       <>
                         <Button
                           onClick={() => setShowGuestForm(true)}
-                          className="w-full h-10 bg-gradient-to-r from-blue-600/80 to-blue-700/80 hover:from-blue-700 hover:to-blue-800 text-white font-semibold text-sm rounded-lg shadow-md hover:shadow-blue-500/25 transition-all duration-300"
+                          className="w-full h-10 bg-gradient-to-r from-yellow-600 to-yellow-600 hover:from-blue-700 hover:to-blue-800 text-white font-semibold text-md rounded-lg shadow-md hover:shadow-blue-500/25 transition-all duration-300"
                         >
-                          👥 게스트 참석 신청
+                          게스트 참석 등록
                         </Button>
-                        <p className="text-xs text-gray-400 text-center mt-1">
-                          경기 2일 전부터 게스트 참석이 가능합니다
+                        <p className="text-xs pt-2 text-gray-400 text-center mt-1">
+                          경기 2일 전부터 게스트 참석 등록이 가능합니다
                         </p>
                       </>
                     ) : (
@@ -628,7 +683,11 @@ export function DashboardClient({ user }: { user: DashboardUser }) {
                             disabled={attendanceLoading}
                             className="h-8 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold text-xs rounded-lg"
                           >
-                            등록
+                            {attendanceLoading ? (
+                              <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin"></div>
+                            ) : (
+                              '등록'
+                            )}
                           </Button>
                           <Button
                             onClick={() => {
@@ -723,7 +782,7 @@ export function DashboardClient({ user }: { user: DashboardUser }) {
                               const isMe = attendance.user?.id === user.id
                               return (
                                 <div 
-                                  key={attendance.user?.id || `guest-${index}`} 
+                                  key={attendance.id || `attendance-${index}`} 
                                   className={`${
                                     isMe 
                                       ? 'bg-gradient-to-r from-yellow-600/30 to-yellow-500/30 border-2 border-yellow-500/60 shadow-lg shadow-yellow-500/20' 
@@ -731,17 +790,31 @@ export function DashboardClient({ user }: { user: DashboardUser }) {
                                   } rounded-lg p-2 text-center relative group cursor-pointer`}
                                 >
                                   <div className={`${isMe ? 'text-yellow-300 font-bold' : 'text-white'} text-xs font-medium truncate`}>
-                                    {attendance.user?.name || attendance.guestName || '이름없음'}
+                                    {attendance.guestName || attendance.user?.name || '이름없음'}
                                   </div>
                                   {attendance.guestName && (
                                     <>
                                       <Badge className="absolute -top-1 -right-1 bg-blue-600 text-white text-xs px-1 py-0 rounded-full font-bold w-4 h-4 flex items-center justify-center">
                                         G
                                       </Badge>
-                                      {/* 툴팁 - 초대한 사람 표시 */}
-                                      <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
-                                        게스트 참석자
-                                      </div>
+                                      {/* 게스트 삭제 버튼 - 관리자 또는 초대자만 */}
+                                      {(user.role === 'ADMIN' || attendance.userId === user.id) && (
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation()
+                                            deleteGuestAttendance(attendance.id, attendance.guestName!)
+                                          }}
+                                          disabled={deletingGuest === attendance.id}
+                                          className="absolute -top-1 -left-1 w-5 h-5 bg-red-600/90 hover:bg-red-700 text-white rounded-full flex items-center justify-center transition-all duration-200 shadow-lg z-20 border border-white"
+                                          title="게스트 참석 취소"
+                                        >
+                                          {deletingGuest === attendance.id ? (
+                                            <div className="w-2.5 h-2.5 border border-white border-t-transparent rounded-full animate-spin"></div>
+                                          ) : (
+                                            <Trash2 className="w-2.5 h-2.5" />
+                                          )}
+                                        </button>
+                                      )}
                                     </>
                                   )}
                                   {isMe && (
@@ -768,7 +841,7 @@ export function DashboardClient({ user }: { user: DashboardUser }) {
                               const isMe = attendance.user?.id === user.id
                               return (
                                 <div 
-                                  key={attendance.user?.id || `guest-absent-${index}`} 
+                                  key={attendance.id || `attendance-absent-${index}`} 
                                   className={`${
                                     isMe 
                                       ? 'bg-gradient-to-r from-yellow-600/30 to-yellow-500/30 border-2 border-yellow-500/60 shadow-lg shadow-yellow-500/20' 
@@ -776,17 +849,31 @@ export function DashboardClient({ user }: { user: DashboardUser }) {
                                   } rounded-lg p-2 text-center relative group cursor-pointer`}
                                 >
                                   <div className={`${isMe ? 'text-yellow-300 font-bold' : 'text-white'} text-xs font-medium truncate`}>
-                                    {attendance.user?.name || attendance.guestName || '이름없음'}
+                                    {attendance.guestName || attendance.user?.name || '이름없음'}
                                   </div>
                                   {attendance.guestName && (
                                     <>
                                       <Badge className="absolute -top-1 -right-1 bg-blue-600 text-white text-xs px-1 py-0 rounded-full font-bold w-4 h-4 flex items-center justify-center">
                                         G
                                       </Badge>
-                                      {/* 툴팁 - 초대한 사람 표시 */}
-                                      <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
-                                        게스트 참석자
-                                      </div>
+                                      {/* 게스트 삭제 버튼 - 관리자 또는 초대자만 */}
+                                      {(user.role === 'ADMIN' || attendance.userId === user.id) && (
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation()
+                                            deleteGuestAttendance(attendance.id, attendance.guestName!)
+                                          }}
+                                          disabled={deletingGuest === attendance.id}
+                                          className="absolute -top-1 -left-1 w-5 h-5 bg-red-600/90 hover:bg-red-700 text-white rounded-full flex items-center justify-center transition-all duration-200 shadow-lg z-20 border border-white"
+                                          title="게스트 참석 취소"
+                                        >
+                                          {deletingGuest === attendance.id ? (
+                                            <div className="w-2.5 h-2.5 border border-white border-t-transparent rounded-full animate-spin"></div>
+                                          ) : (
+                                            <Trash2 className="w-2.5 h-2.5" />
+                                          )}
+                                        </button>
+                                      )}
                                     </>
                                   )}
                                   {isMe && (
@@ -813,7 +900,7 @@ export function DashboardClient({ user }: { user: DashboardUser }) {
                               const isMe = attendance.user?.id === user.id
                               return (
                                 <div 
-                                  key={attendance.user?.id || `guest-pending-${index}`} 
+                                  key={attendance.id || `attendance-pending-${index}`} 
                                   className={`${
                                     isMe 
                                       ? 'bg-gradient-to-r from-yellow-600/40 to-yellow-500/40 border-2 border-yellow-500/70 shadow-lg shadow-yellow-500/20' 
@@ -821,17 +908,31 @@ export function DashboardClient({ user }: { user: DashboardUser }) {
                                   } rounded-lg p-2 text-center relative group cursor-pointer`}
                                 >
                                   <div className={`${isMe ? 'text-yellow-200 font-bold' : 'text-white'} text-xs font-medium truncate`}>
-                                    {attendance.user?.name || attendance.guestName || '이름없음'}
+                                    {attendance.guestName || attendance.user?.name || '이름없음'}
                                   </div>
                                   {attendance.guestName && (
                                     <>
                                       <Badge className="absolute -top-1 -right-1 bg-blue-600 text-white text-xs px-1 py-0 rounded-full font-bold w-4 h-4 flex items-center justify-center">
                                         G
                                       </Badge>
-                                      {/* 툴팁 - 초대한 사람 표시 */}
-                                      <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
-                                        게스트 참석자
-                                      </div>
+                                      {/* 게스트 삭제 버튼 - 관리자 또는 초대자만 */}
+                                      {(user.role === 'ADMIN' || attendance.userId === user.id) && (
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation()
+                                            deleteGuestAttendance(attendance.id, attendance.guestName!)
+                                          }}
+                                          disabled={deletingGuest === attendance.id}
+                                          className="absolute -top-1 -left-1 w-5 h-5 bg-red-600/90 hover:bg-red-700 text-white rounded-full flex items-center justify-center transition-all duration-200 shadow-lg z-20 border border-white"
+                                          title="게스트 참석 취소"
+                                        >
+                                          {deletingGuest === attendance.id ? (
+                                            <div className="w-2.5 h-2.5 border border-white border-t-transparent rounded-full animate-spin"></div>
+                                          ) : (
+                                            <Trash2 className="w-2.5 h-2.5" />
+                                          )}
+                                        </button>
+                                      )}
                                     </>
                                   )}
                                   {isMe && (

@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { User, Trophy, Calendar, MapPin, TrendingUp, Check, X, Users } from "lucide-react"
+import { User, Trophy, Calendar, MapPin } from "lucide-react"
 import { Level, Role, AttendanceStatus } from "@prisma/client"
 
 interface UserProfile {
@@ -195,7 +195,7 @@ export function ProfileClient({ userId }: { userId: string }) {
               
               {/* 프로필 정보 */}
               <div className="flex-1 text-center lg:text-left">
-                <div className="mb-4">
+                {/* <div className="mb-4">
                   <h1 className="text-4xl font-black text-white mb-2 tracking-tight">
                     {user.name || "이름 없음"}
                   </h1>
@@ -206,7 +206,7 @@ export function ProfileClient({ userId }: { userId: string }) {
                       day: 'numeric' 
                     })} 가입
                   </p>
-                </div>
+                </div> */}
                 
                 {/* 배지들 */}
                 <div className="flex flex-wrap justify-center lg:justify-start gap-3 mb-6">
@@ -243,106 +243,35 @@ export function ProfileClient({ userId }: { userId: string }) {
         </Card>
       </div>
 
-      {/* 선수 통계 - 확장된 버전 */}
-      <div className="space-y-6">
-        {/* 메인 통계 */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <Card className="bg-gradient-to-br from-blue-900/20 to-blue-800/10 border-blue-500/30 backdrop-blur-sm hover:border-blue-400/50 transition-all duration-500">
-            <CardContent className="p-6 text-center">
-              <div className="w-16 h-16 bg-gradient-to-r from-blue-600 to-blue-700 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Calendar className="h-8 w-8 text-white" />
-              </div>
-              <div className="text-4xl font-black text-blue-400 mb-2">{user.attendances.length}</div>
-              <h3 className="text-lg font-bold text-white mb-1">총 경기</h3>
-              <p className="text-blue-400 text-sm">Total Matches</p>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gradient-to-br from-green-900/20 to-green-800/10 border-green-500/30 backdrop-blur-sm hover:border-green-400/50 transition-all duration-500">
-            <CardContent className="p-6 text-center">
-              <div className="w-16 h-16 bg-gradient-to-r from-green-600 to-green-700 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Check className="h-8 w-8 text-white" />
-              </div>
-              <div className="text-4xl font-black text-green-400 mb-2">
-                {user.attendances.filter(a => a.status === 'ATTEND').length}
-              </div>
-              <h3 className="text-lg font-bold text-white mb-1">참석</h3>
-              <p className="text-green-400 text-sm">Attended</p>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gradient-to-br from-red-900/20 to-red-800/10 border-red-500/30 backdrop-blur-sm hover:border-red-400/50 transition-all duration-500">
-            <CardContent className="p-6 text-center">
-              <div className="w-16 h-16 bg-gradient-to-r from-red-600 to-red-700 rounded-full flex items-center justify-center mx-auto mb-4">
-                <X className="h-8 w-8 text-white" />
-              </div>
-              <div className="text-4xl font-black text-red-400 mb-2">
-                {user.attendances.filter(a => a.status === 'ABSENT').length}
-              </div>
-              <h3 className="text-lg font-bold text-white mb-1">불참</h3>
-              <p className="text-red-400 text-sm">Absent</p>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gradient-to-br from-yellow-900/20 to-yellow-800/10 border-yellow-500/30 backdrop-blur-sm hover:border-yellow-400/50 transition-all duration-500">
-            <CardContent className="p-6 text-center">
-              <div className="w-16 h-16 bg-gradient-to-r from-yellow-600 to-yellow-700 rounded-full flex items-center justify-center mx-auto mb-4">
-                <TrendingUp className="h-8 w-8 text-white" />
-              </div>
-              <div className="text-4xl font-black text-yellow-400 mb-2">{attendanceRate}%</div>
-              <h3 className="text-lg font-bold text-white mb-1">출석률</h3>
-              <div className="w-full bg-gray-800 rounded-full h-3 mt-2">
-                <div 
-                  className="bg-gradient-to-r from-yellow-600 to-yellow-400 h-3 rounded-full transition-all duration-500"
-                  style={{ width: `${attendanceRate}%` }}
-                ></div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* 레벨 및 팀 정보 */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Card className="bg-gradient-to-br from-purple-900/20 to-purple-800/10 border-purple-500/30 backdrop-blur-sm hover:border-purple-400/50 transition-all duration-500">
-            <CardContent className="p-6">
-              <div className="flex items-center space-x-4 mb-4">
-                <div className="w-12 h-12 bg-gradient-to-r from-purple-600 to-purple-700 rounded-full flex items-center justify-center">
-                  <Trophy className="h-6 w-6 text-white" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-bold text-white">선수 레벨</h3>
-                  <p className="text-purple-400 text-sm">Player Level</p>
-                </div>
-              </div>
-              <div className="text-center">
-                <div className="text-3xl font-black text-purple-400 mb-2">{levelLabels[user.level]}</div>
-                <div className="w-full bg-gray-800 rounded-full h-3 mb-2">
-                  <div className="bg-gradient-to-r from-purple-600 to-purple-400 h-3 rounded-full w-3/4 transition-all duration-500"></div>
-                </div>
-                <p className="text-sm text-gray-400">실력 등급 시스템</p>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gradient-to-br from-indigo-900/20 to-indigo-800/10 border-indigo-500/30 backdrop-blur-sm hover:border-indigo-400/50 transition-all duration-500">
-            <CardContent className="p-6">
-              <div className="flex items-center space-x-4 mb-4">
-                <div className="w-12 h-12 bg-gradient-to-r from-indigo-600 to-indigo-700 rounded-full flex items-center justify-center">
-                  <Users className="h-6 w-6 text-white" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-bold text-white">팀 편성</h3>
-                  <p className="text-indigo-400 text-sm">Team Formations</p>
-                </div>
-              </div>
-              <div className="text-center">
-                <div className="text-3xl font-black text-indigo-400 mb-2">{user.teamMembers.length}</div>
-                <p className="text-sm text-gray-400">참여한 팀 구성</p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+      {/* 간소화된 통계 정보 */}
+      <Card className="bg-gradient-to-br from-gray-900/30 to-black/30 border-gray-500/20 backdrop-blur-sm shadow-lg">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg font-bold text-white flex items-center">
+            <Calendar className="w-5 h-5 mr-2 text-blue-400" />
+            참석 정보
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="text-center">
+              <div className="text-xl font-bold text-blue-400">{user.attendances.length}</div>
+              <p className="text-xs text-gray-400">총 경기</p>
+            </div>
+            <div className="text-center">
+              <div className="text-xl font-bold text-green-400">{user.attendances.filter(a => a.status === 'ATTEND').length}</div>
+              <p className="text-xs text-gray-400">참석</p>
+            </div>
+            <div className="text-center">
+              <div className="text-xl font-bold text-red-400">{user.attendances.filter(a => a.status === 'ABSENT').length}</div>
+              <p className="text-xs text-gray-400">불참</p>
+            </div>
+            <div className="text-center">
+              <div className="text-xl font-bold text-yellow-400">{attendanceRate}%</div>
+              <p className="text-xs text-gray-400">출석률</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* 최근 참석 기록 - 데이터가 있을 때만 표시 */}
       {user.attendances.length > 0 && (

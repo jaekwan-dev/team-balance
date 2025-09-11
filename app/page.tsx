@@ -1,6 +1,6 @@
 import { auth, signOut, signIn } from "@/lib/auth"
 import { Button } from "@/components/ui/button"
-import { LogOut, Zap, User, Users, Menu, Calendar, MessageCircle } from "lucide-react"
+import { LogOut, Zap, User, Users, Menu, Calendar, Plus } from "lucide-react"
 import { DashboardClient } from "@/app/dashboard-client"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import Link from "next/link"
@@ -93,15 +93,15 @@ export default async function Home() {
                             
                             {session.user.role === 'ADMIN' && (
                               <>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuLabel>관리자 메뉴</DropdownMenuLabel>
-                                
-                                <DropdownMenuItem asChild>
-                                  <Link href="/admin/schedules/create" className="flex items-center">
-                                    <Calendar className="w-4 h-4 mr-2" />
-                                    일정 등록
-                                  </Link>
-                                </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuLabel>관리자 메뉴</DropdownMenuLabel>
+                            
+                            <DropdownMenuItem asChild>
+                              <Link href="/admin/schedules" className="flex items-center">
+                                <Calendar className="w-4 h-4 mr-2" />
+                                일정 관리
+                              </Link>
+                            </DropdownMenuItem>
                               </>
                             )}
                             

@@ -334,7 +334,7 @@ export function ScheduleCreateForm() {
               </Button>
               <Button
                 type="button"
-                onClick={() => router.push('/')}
+                onClick={() => router.back()}
                 className="bg-gray-600/50 hover:bg-gray-600 text-white font-bold py-4 px-6 text-lg rounded-lg transition-all duration-300"
               >
                 취소

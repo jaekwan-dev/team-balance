@@ -1,8 +1,11 @@
 import { notFound } from 'next/navigation'
-import { auth } from '@/lib/auth'
+import { auth, signOut } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import ScheduleEditForm from './schedule-edit-form'
-import { Zap } from 'lucide-react'
+import Link from "next/link"
+import { Button } from "@/components/ui/button"
+import { LogOut, Zap, User, Users, Menu, Calendar } from "lucide-react"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 
 export default async function ScheduleEditPage({ 
   params 
@@ -35,32 +38,96 @@ export default async function ScheduleEditPage({
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-red-900">
-      {/* 헤더 - SCHEDULEMODIFY */}
+      {/* Header */}
       <header className="bg-black/90 backdrop-blur-sm border-b-2 border-red-600">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4 sm:py-6">
-            {/* 로고 및 앱 이름 */}
             <div className="flex items-center space-x-2 sm:space-x-4">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-r from-red-600 to-red-800 rounded-lg flex items-center justify-center">
-                <Zap className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-r from-orange-600 to-orange-800 rounded-lg flex items-center justify-center">
+                <Calendar className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
               </div>
               <div>
                 <h1 className="text-xl sm:text-2xl lg:text-3xl font-black text-white tracking-tight">
-                  PPUNG<span className="text-red-500">BROS</span>
+                  SCHEDULE<span className="text-orange-500">MODIFY</span>
                 </h1>
                 <p className="text-xs sm:text-sm text-gray-300 font-medium">
-                  SCHEDULEMODIFY | 관리자: {session.user.name?.toUpperCase()}
+                  Edit Existing Match Schedule
                 </p>
               </div>
             </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  className="border-gray-600/50 text-gray-300 hover:bg-gray-700/50 hover:text-white transition-all duration-300"
+                >
+                  <Menu className="w-4 h-4" />
+                  <span className="hidden sm:inline ml-2">메뉴</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuLabel>
+                  {session.user.name || '사용자'} ({session.user.level})
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                
+                <DropdownMenuItem asChild>
+                  <Link href="/" className="flex items-center">
+                    <Zap className="w-4 h-4 mr-2" />
+                    대시보드
+                  </Link>
+                </DropdownMenuItem>
+                
+                <DropdownMenuItem asChild>
+                  <Link href={`/profile/${session.user.id}`} className="flex items-center">
+                    <User className="w-4 h-4 mr-2" />
+                    내 프로필
+                  </Link>
+                </DropdownMenuItem>
+                
+                <DropdownMenuItem asChild>
+                  <Link href="/members" className="flex items-center">
+                    <Users className="w-4 h-4 mr-2" />
+                    팀원 목록
+                  </Link>
+                </DropdownMenuItem>
+                
+                <DropdownMenuSeparator />
+                <DropdownMenuLabel>관리자 메뉴</DropdownMenuLabel>
+                
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <form
+                    action={async () => {
+                      "use server"
+                      await signOut({ redirectTo: "/auth/signin" })
+                    }}
+                    className="w-full"
+                  >
+                    <button 
+                      type="submit"
+                      className="flex items-center w-full text-red-400 hover:text-red-300"
+                    >
+                      <LogOut className="w-4 h-4 mr-2" />
+                      로그아웃
+                    </button>
+                  </form>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </header>
 
-      {/* 메인 콘텐츠 */}
-      <main className="max-w-4xl mx-auto px-3 sm:px-6 lg:px-8 py-8">
+      {/* Main Content */}
+      <main className="max-w-4xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8">
         <ScheduleEditForm schedule={schedule} />
       </main>
+
+      {/* Racing Stripes */}
+      <div className="fixed top-0 left-0 w-full h-2 bg-gradient-to-r from-red-600 via-white to-red-600 z-50"></div>
+      <div className="fixed bottom-0 left-0 w-full h-1 bg-gradient-to-r from-black via-red-600 to-black"></div>
     </div>
   )
 }

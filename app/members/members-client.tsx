@@ -170,7 +170,7 @@ export function MembersClient({ currentUserRole }: { currentUserRole: string }) 
         <div className="space-y-6">
           {groupMembersByLevel(members).map((group) => (
             <Card key={group.level} className="bg-gradient-to-br from-gray-900/90 to-black/90 border-gray-500/30 backdrop-blur-sm shadow-xl">
-              <CardHeader className="pb-3">
+              <CardHeader className="pb-0">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-lg font-bold text-white flex items-center">
                     <Badge className={`${getLevelBadgeColor(group.level)} text-sm px-3 py-1 rounded-full border font-bold mr-3`}>
@@ -180,7 +180,7 @@ export function MembersClient({ currentUserRole }: { currentUserRole: string }) 
                   </CardTitle>
                 </div>
               </CardHeader>
-              <CardContent className="p-4 pt-0">
+              <CardContent className="p-4 pt-0 pb-0">
                 <div className="space-y-2">
                   {group.members.map((member) => (
                     <div 

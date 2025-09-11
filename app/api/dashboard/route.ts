@@ -43,7 +43,12 @@ export async function GET() {
             }
           },
           attendances: {
-            include: {
+            select: {
+              id: true,
+              status: true,
+              userId: true,
+              guestName: true,
+              guestLevel: true,
               user: {
                 select: {
                   id: true,
