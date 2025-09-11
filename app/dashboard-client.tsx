@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Users, Timer, MapPin, Clock, Check, X, Clock as ClockIcon, Edit3, Trash2, MessageCircle, Send, UserX } from "lucide-react"
+import { Users, Timer, MapPin, Clock, Check, X, Clock as ClockIcon, Edit3, Trash2, MessageCircle, Send } from "lucide-react"
 import { Level, Role, AttendanceStatus } from "@prisma/client"
 
 interface DashboardUser {

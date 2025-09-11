@@ -118,7 +118,6 @@ export async function PATCH(
         email: true,
         level: true,
         role: true,
-        position: true,
         isProfileComplete: true,
         createdAt: true,
       }

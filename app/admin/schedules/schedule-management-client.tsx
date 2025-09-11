@@ -2,10 +2,10 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Calendar, MapPin, Users, Edit3, Trash2, Plus, Clock } from "lucide-react"
+import { Calendar, MapPin, Users, Edit3, Trash2, Clock } from "lucide-react"
 
 interface Schedule {
   id: string

@@ -33,8 +33,7 @@ export async function GET(
               select: {
                 id: true,
                 name: true,
-                level: true,
-                position: true
+                level: true
               }
             }
           },
@@ -64,8 +63,7 @@ export async function GET(
                   select: {
                     id: true,
                     name: true,
-                    level: true,
-                    position: true
+                    level: true
                   }
                 }
               }
