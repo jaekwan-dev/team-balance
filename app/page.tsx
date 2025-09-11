@@ -1,4 +1,4 @@
-import { auth, signOut, signIn } from "@/lib/auth"
+import { auth, signOut, signIn } from "@/auth"
 import { Button } from "@/components/ui/button"
 import { LogOut, Zap, User, Users, Menu, Calendar, Plus } from "lucide-react"
 import { DashboardClient } from "@/app/dashboard-client"
