@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/auth"
 import { prisma } from "@/lib/prisma"
-import { Level } from "@prisma/client"
+// Level 타입 정의
+type Level = 'PRO' | 'SEMI_PRO_1' | 'SEMI_PRO_2' | 'SEMI_PRO_3' | 'AMATEUR_1' | 'AMATEUR_2' | 'AMATEUR_3' | 'AMATEUR_4' | 'AMATEUR_5' | 'BEGINNER_1' | 'BEGINNER_2' | 'BEGINNER_3' | 'ROOKIE'
 
 // Node.js 런타임 사용 (Prisma 호환성)
 export const runtime = 'nodejs'

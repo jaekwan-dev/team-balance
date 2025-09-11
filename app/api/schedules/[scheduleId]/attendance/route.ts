@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/auth"
 import { prisma } from "@/lib/prisma"
-import { AttendanceStatus } from "@prisma/client"
+// AttendanceStatus 타입 정의
+type AttendanceStatus = 'PENDING' | 'ATTEND' | 'ABSENT'
+const ATTENDANCE_STATUS_VALUES = ['PENDING', 'ATTEND', 'ABSENT'] as const
 
 // Node.js 런타임 사용 (Prisma 호환성)
 export const runtime = 'nodejs'
@@ -22,7 +24,7 @@ export async function POST(
     const body = await request.json()
     const { status, guestName, guestLevel } = body
 
-    if (!Object.values(AttendanceStatus).includes(status)) {
+    if (!ATTENDANCE_STATUS_VALUES.includes(status)) {
       return NextResponse.json({ error: "유효하지 않은 참석 상태입니다" }, { status: 400 })
     }
 

@@ -5,7 +5,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Users, Timer, MapPin, Clock, Check, X, Clock as ClockIcon, Edit3, Trash2, MessageCircle, Send, Share2 } from "lucide-react"
-import { Level, Role, AttendanceStatus } from "@prisma/client"
+import type { Level, Role } from "@prisma/client"
+
+// AttendanceStatus 타입 정의
+type AttendanceStatus = 'PENDING' | 'ATTEND' | 'ABSENT'
 
 interface DashboardUser {
   id: string
