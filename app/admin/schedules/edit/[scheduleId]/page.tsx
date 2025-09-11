@@ -38,8 +38,8 @@ export default async function ScheduleEditPage({
     <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-red-900">
       <CommonHeader 
         icon={<Calendar className="w-6 h-6 sm:w-8 sm:h-8 text-white" />}
-        iconBgColor="from-orange-600 to-orange-800"
-        title={<>SCHEDULE<span className="text-orange-500">EDIT</span></>}
+        iconBgColor="from-green-600 to-green-800"
+        title={<>SCHEDULE<span className="text-green-500">EDIT</span></>}
         subtitle="Edit Existing Match Schedule"
       />
 

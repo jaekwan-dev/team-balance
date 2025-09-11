@@ -527,7 +527,7 @@ export function DashboardClient({ user }: { user: DashboardUser }) {
   const canGuestJoin = daysUntil <= 2
   
   // 참석 마감 여부 (참석자가 최대 인원에 도달)
-  const isFull = data.nextSchedule ? data.nextSchedule._count.attendances >= (data.nextSchedule.maxParticipants || 15) : false
+  const isFull = data.nextSchedule ? data.nextSchedule.attendances.filter(a => a.status === 'ATTEND').length >= (data.nextSchedule.maxParticipants || 15) : false
 
   return (
     <div className="space-y-6">
@@ -586,15 +586,18 @@ export function DashboardClient({ user }: { user: DashboardUser }) {
                             weekday: 'short' 
                           })})
                         </h3>
-                        {data.nextSchedule.attendances.find(a => a.user?.id === user.id) && !attendanceLoading && (
-                          <span className={`inline-block mt-1 px-2 py-1 rounded-full text-xs font-semibold ${
-                            data.nextSchedule.attendances.find(a => a.user?.id === user.id)!.status === 'ATTEND' 
-                              ? 'bg-green-600/20 text-green-400 border border-green-600/50' 
-                              : 'bg-red-600/20 text-red-400 border border-red-600/50'
-                          }`}>
-                            {data.nextSchedule.attendances.find(a => a.user?.id === user.id)!.status === 'ATTEND' ? '참석 예정' : '불참 예정'}
-                          </span>
-                        )}
+                        {(() => {
+                          const myAttendance = data.nextSchedule.attendances.find(a => a.user?.id === user.id && !a.guestName)
+                          return myAttendance && !attendanceLoading && (
+                            <span className={`inline-block mt-1 px-2 py-1 rounded-full text-xs font-semibold ${
+                              myAttendance.status === 'ATTEND' 
+                                ? 'bg-green-600/20 text-green-400 border border-green-600/50' 
+                                : 'bg-red-600/20 text-red-400 border border-red-600/50'
+                            }`}>
+                              {myAttendance.status === 'ATTEND' ? '참석 예정' : '불참 예정'}
+                            </span>
+                          )
+                        })()}
                         {attendanceLoading && (
                           <div className="inline-block mt-1 px-2 py-1 bg-gray-600/20 text-gray-400 border border-gray-600/50 rounded-full text-xs font-semibold">
                             <div className="flex items-center">
@@ -629,9 +632,9 @@ export function DashboardClient({ user }: { user: DashboardUser }) {
                   <div className="flex items-center space-x-2 bg-gray-900/50 rounded-lg p-3">
                     <Users className="w-4 h-4 text-blue-500" />
                     <div>
-                      <div className="text-xs text-gray-400">참석률</div>
+                      <div className="text-xs text-gray-400">참석 인원</div>
                       <div className="text-white font-semibold text-sm">
-                        {data.nextSchedule._count.attendances}/{data.nextSchedule.maxParticipants || 15}
+                        {data.nextSchedule.attendances.filter(a => a.status === 'ATTEND').length}/{data.nextSchedule.maxParticipants || 15}
                       </div>
                     </div>
                   </div>
@@ -641,7 +644,7 @@ export function DashboardClient({ user }: { user: DashboardUser }) {
                 <div className="w-full bg-gray-700 rounded-full h-2 mb-4">
                   <div 
                     className="bg-gradient-to-r from-red-500 to-red-600 h-2 rounded-full transition-all duration-500"
-                    style={{ width: `${Math.min(100, (data.nextSchedule._count.attendances / (data.nextSchedule.maxParticipants || 15)) * 100)}%` }}
+                    style={{ width: `${Math.min(100, (data.nextSchedule.attendances.filter(a => a.status === 'ATTEND').length / (data.nextSchedule.maxParticipants || 15)) * 100)}%` }}
                   ></div>
                 </div>
               </div>
@@ -672,7 +675,7 @@ export function DashboardClient({ user }: { user: DashboardUser }) {
               )}
                 
                 {/* 참석/불참 투표 버튼 */}
-                {(!data.nextSchedule.attendances.find(a => a.user?.id === user.id) || showRevote) && !attendanceLoading ? (
+                {(!data.nextSchedule.attendances.find(a => a.user?.id === user.id && !a.guestName) || showRevote) && !attendanceLoading ? (
                   // 아직 투표하지 않았거나 재투표 모드
                   <div className="grid grid-cols-2 gap-3">
                     <Button
@@ -875,7 +878,7 @@ export function DashboardClient({ user }: { user: DashboardUser }) {
                           {data.nextSchedule.attendances
                             .filter(a => a.status === 'ATTEND' && !a.guestName)
                             .map((attendance, index) => {
-                              const isMe = attendance.user?.id === user.id
+                              const isMe = attendance.user?.id === user.id && !attendance.guestName
                               return (
                                 <div 
                                   key={attendance.id || `attendance-${index}`} 
@@ -962,7 +965,7 @@ export function DashboardClient({ user }: { user: DashboardUser }) {
                           {data.nextSchedule.attendances
                             .filter(a => a.status === 'ABSENT')
                             .map((attendance, index) => {
-                              const isMe = attendance.user?.id === user.id
+                              const isMe = attendance.user?.id === user.id && !attendance.guestName
                               const isGuest = !!attendance.guestName
                               const inviterName = isGuest && attendance.user ? attendance.user.name : null
                               return (
@@ -1028,7 +1031,7 @@ export function DashboardClient({ user }: { user: DashboardUser }) {
                           {data.nextSchedule.attendances
                             .filter(a => a.status === 'PENDING')
                             .map((attendance, index) => {
-                              const isMe = attendance.user?.id === user.id
+                              const isMe = attendance.user?.id === user.id && !attendance.guestName
                               return (
                                 <div 
                                   key={attendance.id || `attendance-pending-${index}`} 

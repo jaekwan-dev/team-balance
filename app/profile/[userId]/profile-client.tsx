@@ -13,6 +13,7 @@ interface UserProfile {
   id: string
   name: string | null
   email: string | null
+  image: string | null
   level: Level
   role: Role
   phone: string | null
@@ -188,9 +189,19 @@ export function ProfileClient({ userId }: { userId: string }) {
             <div className="flex flex-col lg:flex-row items-center lg:items-start space-y-6 lg:space-y-0 lg:space-x-8">
               {/* 프로필 아바타 */}
               <div className="relative">
-                <div className="w-32 h-32 bg-gradient-to-r from-red-600 to-red-800 rounded-full flex items-center justify-center shadow-2xl">
-                  <User className="w-16 h-16 text-white" />
-                </div>
+                {user.image ? (
+                  <div className="w-32 h-32 rounded-full overflow-hidden shadow-2xl border-4 border-red-600/50">
+                    <img 
+                      src={user.image} 
+                      alt={user.name || "프로필 이미지"} 
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                ) : (
+                  <div className="w-32 h-32 bg-gradient-to-r from-red-600 to-red-800 rounded-full flex items-center justify-center shadow-2xl">
+                    <User className="w-16 h-16 text-white" />
+                  </div>
+                )}
                 <div className="absolute -bottom-2 -right-2 w-12 h-12 bg-gradient-to-r from-yellow-600 to-yellow-700 rounded-full flex items-center justify-center border-4 border-gray-900">
                   <Trophy className="w-6 h-6 text-white" />
                 </div>

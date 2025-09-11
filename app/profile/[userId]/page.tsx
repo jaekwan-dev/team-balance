@@ -26,8 +26,8 @@ export default async function ProfilePage({
     <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-red-900">
       <CommonHeader 
         icon={<User className="w-6 h-6 sm:w-8 sm:h-8 text-white" />}
-        iconBgColor="from-red-600 to-red-800"
-        title={<>PLAYER<span className="text-red-500">PROFILE</span></>}
+        iconBgColor="from-orange-600 to-orange-800"
+        title={<>PLAYER<span className="text-orange-500">PROFILE</span></>}
         subtitle="Statistics & Performance"
       />
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

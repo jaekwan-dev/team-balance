@@ -66,11 +66,12 @@ export async function POST(
         }
       })
     } else {
-      // 일반 사용자 참석 처리
+      // 일반 사용자 참석 처리 (게스트가 아닌 본인의 참석 정보만)
       const existingAttendance = await prisma.attendance.findFirst({
         where: {
           scheduleId: scheduleId,
-          userId: session.user.id
+          userId: session.user.id,
+          guestName: null  // 게스트가 아닌 본인의 참석 정보만
         }
       })
 

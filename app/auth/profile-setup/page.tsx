@@ -68,9 +68,6 @@ export default function ProfileSetupPage() {
           <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-red-600 to-red-800 rounded-full mb-4 shadow-2xl">
             <Zap className="w-10 h-10 text-white" />
           </div>
-          <div className="px-4 py-2 bg-red-600/20 border border-red-600/50 rounded-lg inline-block">
-            <span className="text-red-400 text-sm font-mono">선수 등록</span>
-          </div>
         </div>
 
         <Card className="bg-black/90 border-red-600/50 backdrop-blur-sm shadow-2xl">
