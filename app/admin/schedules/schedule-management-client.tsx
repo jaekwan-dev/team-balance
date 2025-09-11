@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Calendar, MapPin, Users, Edit3, Trash2, Clock } from "lucide-react"
+import { Calendar, MapPin, Users, Edit3, Trash2, Clock, Plus } from "lucide-react"
 
 interface Schedule {
   id: string
@@ -101,7 +101,21 @@ export function ScheduleManagementClient() {
 
   return (
     <div className="space-y-6">
-      {/* 헤더 통계 */}
+      {/* 상단 헤더 및 일정 등록 버튼 */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-white">일정 관리</h2>
+          <p className="text-gray-400 mt-1">총 {schedules.length}개의 일정</p>
+        </div>
+        <Button 
+          onClick={() => router.push('/admin/schedules/create')}
+          className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-bold"
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          새 일정 등록
+        </Button>
+      </div>
+      
       {/* 일정 목록 */}
       {sortedSchedules.length > 0 ? (
         <div className="space-y-4">

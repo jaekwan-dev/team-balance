@@ -2,6 +2,7 @@ import { auth } from "@/auth"
 import { redirect } from "next/navigation"
 import { CommonHeader } from "@/components/common-header"
 import { ScheduleManagementClient } from "./schedule-management-client"
+import { Calendar } from "lucide-react"
 
 export default async function ScheduleManagementPage() {
   const session = await auth()
@@ -13,7 +14,12 @@ export default async function ScheduleManagementPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-red-900">
-      <CommonHeader />
+      <CommonHeader 
+        icon={<Calendar className="w-6 h-6 sm:w-8 sm:h-8 text-white" />}
+        iconBgColor="from-purple-600 to-purple-800"
+        title={<>SCHEDULE<span className="text-purple-500">MANAGE</span></>}
+        subtitle="Manage All Match Schedules"
+      />
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8">

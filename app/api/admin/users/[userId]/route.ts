@@ -1,10 +1,29 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/auth"
 import { prisma } from "@/lib/prisma"
-import { Level, Role } from "@prisma/client"
 
 // Node.js 런타임 사용 (Prisma 호환성)
 export const runtime = 'nodejs'
+
+// Level과 Role enum 정의
+const LEVELS = [
+  'ELITE',
+  'PRO_2',
+  'PRO_1',
+  'SEMI_PRO_3',
+  'SEMI_PRO_2',
+  'SEMI_PRO_1',
+  'AMATEUR_3',
+  'AMATEUR_2',
+  'AMATEUR_1',
+  'BEGINNER_3',
+  'ROOKIE'
+] as const
+
+const ROLES = ['ADMIN', 'MEMBER'] as const
+
+type Level = typeof LEVELS[number]
+type Role = typeof ROLES[number]
 
 // 특정 회원 정보 조회
 export async function GET(
@@ -98,11 +117,11 @@ export async function PATCH(
     const { level, role } = body
 
     // 유효성 검사
-    if (level && !Object.values(Level).includes(level)) {
+    if (level && !LEVELS.includes(level as Level)) {
       return NextResponse.json({ error: "유효하지 않은 레벨입니다" }, { status: 400 })
     }
 
-    if (role && !Object.values(Role).includes(role)) {
+    if (role && !ROLES.includes(role as Role)) {
       return NextResponse.json({ error: "유효하지 않은 권한입니다" }, { status: 400 })
     }
 

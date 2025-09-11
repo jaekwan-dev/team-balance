@@ -768,16 +768,16 @@ export function DashboardClient({ user }: { user: DashboardUser }) {
                 
                 {data.nextSchedule.attendances.length > 0 ? (
                   <div className="space-y-3">
-                    {/* 참석 예정자 */}
-                    {data.nextSchedule.attendances.filter(a => a.status === 'ATTEND').length > 0 && (
+                    {/* 참석 예정자 - 팀원 */}
+                    {data.nextSchedule.attendances.filter(a => a.status === 'ATTEND' && !a.guestName).length > 0 && (
                       <div>
                         <h5 className="text-sm font-semibold text-green-400 mb-2 flex items-center">
                           <Check className="w-3 h-3 mr-1" />
-                          참석 예정 ({data.nextSchedule.attendances.filter(a => a.status === 'ATTEND').length}명)
+                          팀원 참석 ({data.nextSchedule.attendances.filter(a => a.status === 'ATTEND' && !a.guestName).length}명)
                         </h5>
-                        <div className="grid grid-cols-4 gap-2">
+                        <div className="grid grid-cols-3 gap-2 mb-4">
                           {data.nextSchedule.attendances
-                            .filter(a => a.status === 'ATTEND')
+                            .filter(a => a.status === 'ATTEND' && !a.guestName)
                             .map((attendance, index) => {
                               const isMe = attendance.user?.id === user.id
                               return (
@@ -789,36 +789,64 @@ export function DashboardClient({ user }: { user: DashboardUser }) {
                                       : 'bg-green-600/20 border border-green-600/30'
                                   } rounded-lg p-2 text-center relative group cursor-pointer`}
                                 >
-                                  <div className={`${isMe ? 'text-yellow-300 font-bold' : 'text-white'} text-xs font-medium truncate`}>
-                                    {attendance.guestName || attendance.user?.name || '이름없음'}
+                                  <div className={`${isMe ? 'text-yellow-300 font-bold' : 'text-white'} text-sm font-medium truncate`}>
+                                    {attendance.user?.name || '이름없음'}
                                   </div>
-                                  {attendance.guestName && (
-                                    <>
-                                      <Badge className="absolute -top-1 -right-1 bg-blue-600 text-white text-xs px-1 py-0 rounded-full font-bold w-4 h-4 flex items-center justify-center">
-                                        G
-                                      </Badge>
-                                      {/* 게스트 삭제 버튼 - 관리자 또는 초대자만 */}
-                                      {(user.role === 'ADMIN' || attendance.userId === user.id) && (
-                                        <button
-                                          onClick={(e) => {
-                                            e.stopPropagation()
-                                            deleteGuestAttendance(attendance.id, attendance.guestName!)
-                                          }}
-                                          disabled={deletingGuest === attendance.id}
-                                          className="absolute -top-1 -left-1 w-5 h-5 bg-red-600/90 hover:bg-red-700 text-white rounded-full flex items-center justify-center transition-all duration-200 shadow-lg z-20 border border-white"
-                                          title="게스트 참석 취소"
-                                        >
-                                          {deletingGuest === attendance.id ? (
-                                            <div className="w-2.5 h-2.5 border border-white border-t-transparent rounded-full animate-spin"></div>
-                                          ) : (
-                                            <Trash2 className="w-2.5 h-2.5" />
-                                          )}
-                                        </button>
-                                      )}
-                                    </>
-                                  )}
                                   {isMe && (
                                     <div className="absolute -top-1 -left-1 w-3 h-3 bg-gradient-to-r from-yellow-400 to-yellow-500 rounded-full animate-pulse"></div>
+                                  )}
+                                </div>
+                              )
+                            })}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* 참석 예정자 - 게스트 */}
+                    {data.nextSchedule.attendances.filter(a => a.status === 'ATTEND' && a.guestName).length > 0 && (
+                      <div>
+                        <h5 className="text-sm font-semibold text-blue-400 mb-2 flex items-center">
+                          <Users className="w-3 h-3 mr-1" />
+                          게스트 참석 ({data.nextSchedule.attendances.filter(a => a.status === 'ATTEND' && a.guestName).length}명)
+                        </h5>
+                        <div className="grid grid-cols-3 gap-2 mb-4">
+                          {data.nextSchedule.attendances
+                            .filter(a => a.status === 'ATTEND' && a.guestName)
+                            .map((attendance, index) => {
+                              const inviterName = attendance.user ? attendance.user.name : null
+                              return (
+                                <div 
+                                  key={attendance.id || `guest-attendance-${index}`} 
+                                  className="bg-blue-600/20 border border-blue-600/30 rounded-lg p-2 text-center relative group cursor-pointer"
+                                >
+                                  <div className="text-white text-sm font-medium truncate">
+                                    {attendance.guestName}
+                                  </div>
+                                  {inviterName && (
+                                    <div className="text-xs text-gray-400 mt-0.5 truncate">
+                                      ({inviterName})
+                                    </div>
+                                  )}
+                                  <Badge className="absolute -top-1 -right-1 bg-blue-600 text-white text-xs px-1 py-0 rounded-full font-bold w-4 h-4 flex items-center justify-center">
+                                    G
+                                  </Badge>
+                                  {/* 게스트 삭제 버튼 - 관리자 또는 초대자만 */}
+                                  {(user.role === 'ADMIN' || attendance.userId === user.id) && (
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        deleteGuestAttendance(attendance.id, attendance.guestName!)
+                                      }}
+                                      disabled={deletingGuest === attendance.id}
+                                      className="absolute -top-1 -left-1 w-5 h-5 bg-red-600/90 hover:bg-red-700 text-white rounded-full flex items-center justify-center transition-all duration-200 shadow-lg z-20 border border-white"
+                                      title="게스트 참석 취소"
+                                    >
+                                      {deletingGuest === attendance.id ? (
+                                        <div className="w-2.5 h-2.5 border border-white border-t-transparent rounded-full animate-spin"></div>
+                                      ) : (
+                                        <Trash2 className="w-2.5 h-2.5" />
+                                      )}
+                                    </button>
                                   )}
                                 </div>
                               )
@@ -834,11 +862,13 @@ export function DashboardClient({ user }: { user: DashboardUser }) {
                           <X className="w-3 h-3 mr-1" />
                           불참 ({data.nextSchedule.attendances.filter(a => a.status === 'ABSENT').length}명)
                         </h5>
-                        <div className="grid grid-cols-4 gap-2">
+                        <div className="grid grid-cols-3 gap-2">
                           {data.nextSchedule.attendances
                             .filter(a => a.status === 'ABSENT')
                             .map((attendance, index) => {
                               const isMe = attendance.user?.id === user.id
+                              const isGuest = !!attendance.guestName
+                              const inviterName = isGuest && attendance.user ? attendance.user.name : null
                               return (
                                 <div 
                                   key={attendance.id || `attendance-absent-${index}`} 
@@ -848,9 +878,14 @@ export function DashboardClient({ user }: { user: DashboardUser }) {
                                       : 'bg-red-600/20 border border-red-600/30'
                                   } rounded-lg p-2 text-center relative group cursor-pointer`}
                                 >
-                                  <div className={`${isMe ? 'text-yellow-300 font-bold' : 'text-white'} text-xs font-medium truncate`}>
+                                  <div className={`${isMe ? 'text-yellow-300 font-bold' : 'text-white'} text-sm font-medium truncate`}>
                                     {attendance.guestName || attendance.user?.name || '이름없음'}
                                   </div>
+                                  {isGuest && inviterName && (
+                                    <div className="text-xs text-gray-400 mt-0.5 truncate">
+                                      ({inviterName} 지인)
+                                    </div>
+                                  )}
                                   {attendance.guestName && (
                                     <>
                                       <Badge className="absolute -top-1 -right-1 bg-blue-600 text-white text-xs px-1 py-0 rounded-full font-bold w-4 h-4 flex items-center justify-center">

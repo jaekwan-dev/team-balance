@@ -3,11 +3,33 @@ import { Button } from "@/components/ui/button"
 import { LogOut, Zap, User, Users, Menu, Calendar, Home } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import Link from "next/link"
+import { ReactNode } from "react"
 
-export async function CommonHeader() {
+interface CommonHeaderProps {
+  icon?: ReactNode
+  iconBgColor?: string
+  title?: ReactNode
+  subtitle?: string
+}
+
+export async function CommonHeader({ 
+  icon,
+  iconBgColor = "from-red-600 to-red-800",
+  title,
+  subtitle
+}: CommonHeaderProps = {}) {
   const session = await auth()
   
   if (!session?.user) return null
+
+  // 기본값 설정
+  const defaultIcon = <Zap className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
+  const defaultTitle = (
+    <>
+      PPUNG<span className="text-red-500">BROS</span>
+    </>
+  )
+  const defaultSubtitle = `선수: ${session.user.name?.toUpperCase()} | 레벨: ${session.user.level}`
 
   return (
     <header className="bg-black/90 backdrop-blur-sm border-b-2 border-red-600">
@@ -15,15 +37,15 @@ export async function CommonHeader() {
         <div className="flex justify-between items-center py-4 sm:py-6">
           {/* 로고 및 앱 이름 */}
           <Link href="/" className="flex items-center space-x-2 sm:space-x-4">
-            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-r from-red-600 to-red-800 rounded-lg flex items-center justify-center">
-              <Zap className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
+            <div className={`w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-r ${iconBgColor} rounded-lg flex items-center justify-center`}>
+              {icon || defaultIcon}
             </div>
             <div>
               <h1 className="text-xl sm:text-2xl lg:text-3xl font-black text-white tracking-tight">
-                PPUNG<span className="text-red-500">BROS</span>
+                {title || defaultTitle}
               </h1>
               <p className="text-xs sm:text-sm text-gray-300 font-medium">
-                선수: {session.user.name?.toUpperCase()} | 레벨: {session.user.level}
+                {subtitle || defaultSubtitle}
               </p>
             </div>
           </Link>

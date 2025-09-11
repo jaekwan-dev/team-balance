@@ -5,7 +5,9 @@
       "Bash(powershell:*)",
       "Bash(npx prisma generate:*)",
       "Bash(npx prisma:*)",
-      "Bash(npm run build:*)"
+      "Bash(npm run build:*)",
+      "Bash(curl:*)",
+      "Bash(npx tsx:*)"
     ],
     "deny": [],
     "ask": []

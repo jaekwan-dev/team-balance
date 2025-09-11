@@ -2,6 +2,7 @@ import { auth } from "@/auth"
 import { redirect } from "next/navigation"
 import { CommonHeader } from "@/components/common-header"
 import { MembersClient } from "./members-client"
+import { Users } from "lucide-react"
 
 export default async function MembersPage() {
   const session = await auth()
@@ -13,7 +14,12 @@ export default async function MembersPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-red-900">
-      <CommonHeader />
+      <CommonHeader 
+        icon={<Users className="w-6 h-6 sm:w-8 sm:h-8 text-white" />}
+        iconBgColor="from-blue-600 to-blue-800"
+        title={<>TEAM<span className="text-blue-500">MEMBERS</span></>}
+        subtitle="All Members Information"
+      />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <MembersClient currentUserRole={session.user.role} />

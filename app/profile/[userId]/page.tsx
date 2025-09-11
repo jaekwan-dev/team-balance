@@ -2,6 +2,7 @@ import { auth } from "@/auth"
 import { redirect } from "next/navigation"
 import { CommonHeader } from "@/components/common-header"
 import { ProfileClient } from "./profile-client"
+import { User } from "lucide-react"
 
 export default async function ProfilePage({ 
   params 
@@ -23,7 +24,12 @@ export default async function ProfilePage({
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-red-900">
-      <CommonHeader />
+      <CommonHeader 
+        icon={<User className="w-6 h-6 sm:w-8 sm:h-8 text-white" />}
+        iconBgColor="from-red-600 to-red-800"
+        title={<>PLAYER<span className="text-red-500">PROFILE</span></>}
+        subtitle="Statistics & Performance"
+      />
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <ProfileClient userId={userId} />
       </main>
