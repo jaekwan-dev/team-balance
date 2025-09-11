@@ -1,12 +1,12 @@
 import { auth, signOut, signIn } from "@/auth"
 import { Button } from "@/components/ui/button"
-import { LogOut, Zap, User, Users, Menu, Calendar, Home } from "lucide-react"
+import { LogOut, Zap, User, Users, Menu, Calendar, Home as HomeIcon } from "lucide-react"
 import { DashboardClient } from "@/app/dashboard-client"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import Link from "next/link"
 import { FaFutbol } from "react-icons/fa"
 
-export default async function Home() {
+export default async function HomePage() {
   const session = await auth()
 
   if (!session?.user) {
@@ -79,7 +79,7 @@ export default async function Home() {
                             
                             <DropdownMenuItem asChild>
                               <Link href="/" className="flex items-center">
-                                <Home className="w-4 h-4 mr-2" />
+                                <HomeIcon className="w-4 h-4 mr-2" />
                                 홈
                               </Link>
                             </DropdownMenuItem>
