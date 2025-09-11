@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Users, Timer, MapPin, Clock, Check, X, Clock as ClockIcon, Edit3, Trash2, MessageCircle, Send } from "lucide-react"
+import { Users, Timer, MapPin, Clock, Check, X, Clock as ClockIcon, Edit3, Trash2, MessageCircle, Send, Share2 } from "lucide-react"
 import { Level, Role, AttendanceStatus } from "@prisma/client"
 
 interface DashboardUser {
@@ -403,6 +403,99 @@ export function DashboardClient({ user }: { user: DashboardUser }) {
     } finally {
       setDeletingGuest(null)
     }
+  }
+
+  const shareTeamFormation = () => {
+    if (!data?.nextSchedule || !teams || teams.length === 0) return
+
+    // 팀 색상 이름 가져오기 함수
+    const getTeamName = (teamNumber: number, totalTeams: number) => {
+      if (totalTeams === 2) {
+        return teamNumber === 1 ? '⚪ WHITE' : '⚫ BLACK'
+      } else if (totalTeams === 3) {
+        switch (teamNumber) {
+          case 1: return '⚪ WHITE'
+          case 2: return '⚫ BLACK'
+          case 3: return '🟠 ORANGE'
+          default: return `팀 ${teamNumber}`
+        }
+      } else {
+        return `팀 ${teamNumber}`
+      }
+    }
+
+    // 텍스트 포맷 생성
+    let shareText = `⚽ 팀편성 결과\n`
+    shareText += `📅 ${new Date(data.nextSchedule.date).toLocaleDateString('ko-KR', {
+      month: 'long',
+      day: 'numeric',
+      weekday: 'short'
+    })}\n`
+    shareText += `📍 ${data.nextSchedule.location}\n`
+    shareText += `━━━━━━━━━━━━━━━\n\n`
+
+    teams.forEach((team) => {
+      const teamName = getTeamName(team.teamNumber, teams.length)
+      shareText += `${teamName} (${team.members.length}명)\n`
+      
+      const memberNames = team.members.map((member: TeamMember) => {
+        const name = member.user?.name || member.guestName || '이름없음'
+        return member.guestName ? `${name}(G)` : name
+      })
+      
+      shareText += memberNames.join(', ') + '\n\n'
+    })
+
+    shareText += `━━━━━━━━━━━━━━━\n`
+    shareText += `총 ${teams.reduce((acc, team) => acc + team.members.length, 0)}명 참석`
+
+    // 클립보드에 복사
+    if (navigator.clipboard && window.isSecureContext) {
+      // navigator.clipboard API 사용 (HTTPS 환경)
+      navigator.clipboard.writeText(shareText).then(() => {
+        alert('팀편성 결과가 클립보드에 복사되었습니다.\n카카오톡에서 붙여넣기(Ctrl+V) 하세요!')
+      }).catch(() => {
+        // 실패 시 대체 방법 시도
+        fallbackCopyTextToClipboard(shareText)
+      })
+    } else {
+      // HTTP 환경이거나 clipboard API를 지원하지 않는 경우
+      fallbackCopyTextToClipboard(shareText)
+    }
+  }
+
+  // 대체 복사 방법 (구형 브라우저 및 HTTP 환경용)
+  const fallbackCopyTextToClipboard = (text: string) => {
+    const textArea = document.createElement("textarea")
+    textArea.value = text
+    textArea.style.position = "fixed"
+    textArea.style.top = "0"
+    textArea.style.left = "0"
+    textArea.style.width = "2em"
+    textArea.style.height = "2em"
+    textArea.style.padding = "0"
+    textArea.style.border = "none"
+    textArea.style.outline = "none"
+    textArea.style.boxShadow = "none"
+    textArea.style.background = "transparent"
+    
+    document.body.appendChild(textArea)
+    textArea.focus()
+    textArea.select()
+    
+    try {
+      const successful = document.execCommand('copy')
+      if (successful) {
+        alert('팀편성 결과가 클립보드에 복사되었습니다.\n카카오톡에서 붙여넣기(Ctrl+V) 하세요!')
+      } else {
+        alert('복사에 실패했습니다. 텍스트를 직접 선택하여 복사해주세요.')
+      }
+    } catch (err) {
+      console.error('복사 실패:', err)
+      alert('복사에 실패했습니다. 텍스트를 직접 선택하여 복사해주세요.')
+    }
+    
+    document.body.removeChild(textArea)
   }
 
   if (loading) {
@@ -991,6 +1084,9 @@ export function DashboardClient({ user }: { user: DashboardUser }) {
                   <h4 className="text-lg font-bold text-white flex items-center">
                     <MessageCircle className="w-4 h-4 mr-2 text-green-500" />
                     Comments
+                    {comments.length > 0 && (
+                      <span className="ml-2 text-sm text-gray-400">({comments.length})</span>
+                    )}
                   </h4>
                   <Button
                     onClick={() => {
@@ -1076,12 +1172,21 @@ export function DashboardClient({ user }: { user: DashboardUser }) {
                     <h4 className="text-lg font-bold text-white flex items-center">
                       ⚽ 팀편성 결과
                     </h4>
-                    <Button
-                      onClick={() => setShowTeams(false)}
-                      className="text-xs px-2 py-1 bg-gray-600/50 text-gray-300 hover:bg-gray-600 hover:text-white rounded"
-                    >
-                      닫기
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={shareTeamFormation}
+                        className="text-xs px-2 py-1 bg-blue-600/50 text-blue-300 hover:bg-blue-600 hover:text-white rounded flex items-center"
+                      >
+                        <Share2 className="w-3 h-3 mr-1" />
+                        공유
+                      </Button>
+                      <Button
+                        onClick={() => setShowTeams(false)}
+                        className="text-xs px-2 py-1 bg-gray-600/50 text-gray-300 hover:bg-gray-600 hover:text-white rounded"
+                      >
+                        닫기
+                      </Button>
+                    </div>
                   </div>
                   <div className="space-y-4">
                     {teams.map((team) => {
