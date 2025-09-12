@@ -3,7 +3,6 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { signIn } from "next-auth/react"
-import Image from "next/image"
 import { AuthLoading } from "@/components/auth-loading"
 
 export function LoginClient() {
