@@ -26,6 +26,7 @@ interface Schedule {
   maxParticipants: number | null
   _count: {
     attendances: number
+    comments?: number
   }
   attendances: {
     id: string
@@ -130,6 +131,7 @@ export function DashboardClient({ user }: { user: DashboardUser }) {
   const [showComments, setShowComments] = useState(false)
   const [newComment, setNewComment] = useState('')
   const [commentLoading, setCommentLoading] = useState(false)
+  const [commentsLoading, setCommentsLoading] = useState(false)
   const [showRevote, setShowRevote] = useState(false)
   const [deletingGuest, setDeletingGuest] = useState<string | null>(null)
 
@@ -330,6 +332,7 @@ export function DashboardClient({ user }: { user: DashboardUser }) {
   }
 
   const fetchComments = async (scheduleId: string) => {
+    setCommentsLoading(true)
     try {
       const response = await fetch(`/api/schedules/${scheduleId}/comments`)
       if (response.ok) {
@@ -338,6 +341,8 @@ export function DashboardClient({ user }: { user: DashboardUser }) {
       }
     } catch (error) {
       console.error('댓글 조회 실패:', error)
+    } finally {
+      setCommentsLoading(false)
     }
   }
 
@@ -622,17 +627,17 @@ export function DashboardClient({ user }: { user: DashboardUser }) {
                   </div>
                 </div>
                 
-                {/* 핵심 정보만 간단히 표시 */}
-                <div className="grid grid-cols-2 gap-3 mb-4">
-                  <div className="flex items-center space-x-2 bg-gray-900/50 rounded-lg p-3">
-                    <MapPin className="w-4 h-4 text-yellow-500" />
+                {/* 핵심 정보만 간단히 표시 - 세로 배치 */}
+                <div className="space-y-3 mb-4">
+                  <div className="flex items-center space-x-3 bg-gray-900/50 rounded-lg p-3">
+                    <MapPin className="w-4 h-4 text-yellow-500 flex-shrink-0" />
                     <div className="min-w-0 flex-1">
                       <div className="text-xs text-gray-400">장소</div>
-                      <div className="text-white font-semibold text-sm truncate">{data.nextSchedule.location}</div>
+                      <div className="text-white font-semibold text-sm">{data.nextSchedule.location}</div>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-2 bg-gray-900/50 rounded-lg p-3">
-                    <Users className="w-4 h-4 text-blue-500" />
+                  <div className="flex items-center space-x-3 bg-gray-900/50 rounded-lg p-3">
+                    <Users className="w-4 h-4 text-blue-500 flex-shrink-0" />
                     <div>
                       <div className="text-xs text-gray-400">참석 인원</div>
                       <div className="text-white font-semibold text-sm">
@@ -1105,7 +1110,7 @@ export function DashboardClient({ user }: { user: DashboardUser }) {
                     }}
                     className="text-xs px-3 py-1 bg-gray-600/50 text-gray-300 hover:bg-gray-600 hover:text-white rounded"
                   >
-                    {showComments ? '닫기' : '댓글 보기'}
+                    {showComments ? '닫기' : `댓글 보기${data.nextSchedule._count.comments ? ` (${data.nextSchedule._count.comments})` : ''}`}
                   </Button>
                 </div>
 
@@ -1138,7 +1143,11 @@ export function DashboardClient({ user }: { user: DashboardUser }) {
 
                     {/* 댓글 목록 */}
                     <div className="border-t border-gray-700/50 pt-4">
-                      {comments.length > 0 ? (
+                      {commentsLoading ? (
+                        <div className="flex items-center justify-center py-6">
+                          <div className="w-6 h-6 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
+                        </div>
+                      ) : comments.length > 0 ? (
                         <div className="space-y-3 max-h-80 overflow-y-auto">
                           {comments.map((comment) => (
                             <div key={comment.id} className="bg-gray-900/30 rounded-lg p-3 border border-gray-700/30">
@@ -1163,11 +1172,7 @@ export function DashboardClient({ user }: { user: DashboardUser }) {
                             </div>
                           ))}
                         </div>
-                      ) : (
-                        <p className="text-gray-400 text-center py-6 text-sm">
-                          아직 댓글이 없습니다. 첫 번째 댓글을 남겨보세요! 💬
-                        </p>
-                      )}
+                      ) : null}
                     </div>
                   </div>
                 )}

@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { ChevronLeft, ChevronRight } from "lucide-react"
 import { DayPicker } from "react-day-picker"
 
 import { cn } from "@/lib/utils"
@@ -17,14 +18,20 @@ function Calendar({
     <DayPicker
       showOutsideDays={showOutsideDays}
       className={cn("p-3", className)}
+      components={{
+        IconLeft: () => <ChevronLeft className="h-4 w-4" />,
+        IconRight: () => <ChevronRight className="h-4 w-4" />,
+      }}
       classNames={{
         months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
         month: "space-y-4",
         caption: "flex justify-center pt-1 relative items-center",
-        caption_label: "text-sm font-medium text-white",
+        caption_label: "text-sm font-bold text-white",
         nav: "space-x-1 flex items-center",
         nav_button: cn(
-          "h-7 w-7 bg-gray-800/50 border border-red-600/30 rounded p-0 text-white hover:bg-red-600/20 hover:border-red-500 transition-all duration-200"
+          "h-8 w-8 bg-red-600 border-2 border-red-400 rounded text-white hover:bg-red-700 hover:border-red-300 transition-all duration-200 flex items-center justify-center shadow-lg",
+          "disabled:opacity-50 disabled:cursor-not-allowed",
+          "[&>svg]:text-white"
         ),
         nav_button_previous: "absolute left-1",
         nav_button_next: "absolute right-1",
@@ -39,8 +46,8 @@ function Calendar({
         ),
         day_range_end: "day-range-end",
         day_selected:
-          "bg-red-600 text-white hover:bg-red-700 hover:text-white focus:bg-red-600 focus:text-white",
-        day_today: "bg-red-600/30 text-white border border-red-500",
+          "bg-red-600 text-white hover:bg-red-700 hover:text-white focus:bg-red-600 focus:text-white font-bold shadow-lg",
+        day_today: "bg-yellow-600/40 text-yellow-300 border-2 border-yellow-500 font-bold",
         day_outside:
           "day-outside text-gray-500 opacity-50 aria-selected:bg-red-600/20 aria-selected:text-gray-300 aria-selected:opacity-70",
         day_disabled: "text-gray-600 opacity-30",

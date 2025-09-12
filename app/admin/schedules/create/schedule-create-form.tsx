@@ -219,7 +219,7 @@ export function ScheduleCreateForm() {
                           <SelectItem 
                             key={time.value} 
                             value={time.value}
-                            className="text-white hover:bg-red-600/20 font-mono focus:bg-red-600/20"
+                            className="text-white hover:bg-red-600/40 hover:text-white font-mono focus:bg-red-600 focus:text-white data-[state=checked]:bg-red-600 data-[state=checked]:text-white data-[state=checked]:font-bold transition-all"
                           >
                             {time.label}
                           </SelectItem>
@@ -280,7 +280,7 @@ export function ScheduleCreateForm() {
                             <SelectItem 
                               key={num} 
                               value={num.toString()}
-                              className="text-white hover:bg-red-600/20 font-mono focus:bg-red-600/20"
+                              className="text-white hover:bg-red-600/40 hover:text-white font-mono focus:bg-red-600 focus:text-white data-[state=checked]:bg-red-600 data-[state=checked]:text-white data-[state=checked]:font-bold transition-all"
                             >
                               {num}명
                             </SelectItem>

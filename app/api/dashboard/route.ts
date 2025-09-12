@@ -39,7 +39,8 @@ export async function GET() {
                 where: {
                   status: 'ATTEND'
                 }
-              }
+              },
+              comments: true
             }
           },
           attendances: {
@@ -85,7 +86,8 @@ export async function GET() {
                 where: {
                   status: 'ATTEND'
                 }
-              }
+              },
+              comments: true
             }
           },
           attendances: {
