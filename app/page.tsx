@@ -5,10 +5,12 @@ import { DashboardClient } from "@/app/dashboard-client"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import Link from "next/link"
 import { FaFutbol } from "react-icons/fa"
+import { redirect } from "next/navigation"
 
 export default async function HomePage() {
   const session = await auth()
 
+  // 로그인하지 않은 사용자에게 로그인 화면 표시
   if (!session?.user) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-red-900 flex items-center justify-center">
@@ -36,6 +38,11 @@ export default async function HomePage() {
         </div>
       </div>
     )
+  }
+
+  // 프로필이 완료되지 않은 사용자는 프로필 설정 페이지로 리다이렉트
+  if (!session.user.isProfileComplete) {
+    redirect("/auth/profile-setup")
   }
 
   return (

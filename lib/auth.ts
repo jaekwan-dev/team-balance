@@ -17,6 +17,12 @@ export const config = {
       clientId: process.env.KAKAO_CLIENT_ID!,
       clientSecret: process.env.KAKAO_CLIENT_SECRET!,
       checks: ["pkce", "state"],
+      authorization: {
+        params: {
+          prompt: "select_account", // 항상 계정 선택 화면 표시
+          scope: "profile_nickname profile_image account_email", // 요청할 권한
+        },
+      },
     }),
   ],
   trustHost: true,
