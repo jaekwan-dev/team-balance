@@ -104,7 +104,7 @@ export default function ProfileSetupClient() {
                       </FormLabel>
                       <FormControl>
                         <Input 
-                          placeholder="이름을 입력하세요 (최대 4글자)" 
+                          placeholder="반드시 실명으로 입력해주세요" 
                           maxLength={4}
                           className="bg-gray-900/50 border-red-600/30 text-white placeholder-gray-500 focus:border-red-500 font-mono"
                           {...field} 
