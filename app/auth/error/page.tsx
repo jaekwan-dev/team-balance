@@ -54,7 +54,7 @@ export default function AuthErrorPage() {
       <div className="flex min-h-screen items-center justify-center">
         <div className="mx-auto max-w-md space-y-6 p-8">
           <div className="text-center">
-            <h1 className="text-2xl font-bold text-gray-600">로딩 중...</h1>
+            <h1 className="text-2xl font-bold text-gray-600">화면 이동중...</h1>
           </div>
         </div>
       </div>

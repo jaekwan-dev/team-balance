@@ -27,7 +27,6 @@ export function LoginClient() {
         <h1 className="text-4xl font-black text-white tracking-tight mb-4">
           PPUNG<span className="text-red-500">BROS</span>
         </h1>
-        <p className="text-gray-300 mb-8">뻥브로스</p>
         <Button
           onClick={handleLogin}
           disabled={isLoading}
