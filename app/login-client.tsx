@@ -21,9 +21,6 @@ export function LoginClient() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-red-900 flex items-center justify-center">
       <div className="text-center">
-        <div className="w-20 h-20 bg-gradient-to-r from-red-600 to-red-800 rounded-full flex items-center justify-center mx-auto mb-6 shadow-2xl overflow-hidden">
-          <Image src="/red_log_small.jpg" alt="PPUNGBROS Logo" width={80} height={80} className="object-cover" />
-        </div>
         <h1 className="text-4xl font-black text-white tracking-tight mb-4">
           PPUNG<span className="text-red-500">BROS</span>
         </h1>
