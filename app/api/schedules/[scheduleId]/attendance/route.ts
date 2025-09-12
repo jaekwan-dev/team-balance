@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/auth"
 import { prisma } from "@/lib/prisma"
-// AttendanceStatus 타입 정의
-type AttendanceStatus = 'PENDING' | 'ATTEND' | 'ABSENT'
+// AttendanceStatus 상수 정의
 const ATTENDANCE_STATUS_VALUES = ['PENDING', 'ATTEND', 'ABSENT'] as const
 
 // Node.js 런타임 사용 (Prisma 호환성)

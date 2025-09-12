@@ -7,13 +7,23 @@ import Link from "next/link"
 import Image from "next/image"
 import { redirect } from "next/navigation"
 import { LoginClient } from "@/app/login-client"
+import { prisma } from "@/lib/prisma"
 
 export default async function HomePage() {
   const session = await auth()
 
   // 로그인하지 않은 사용자에게 로그인 화면 표시
-  // session이 null인 경우는 탈퇴한 사용자일 수도 있음
   if (!session?.user) {
+    return <LoginClient />
+  }
+
+  // 사용자가 DB에 존재하는지 확인 (탈퇴한 사용자 체크)
+  const existingUser = await prisma.user.findUnique({
+    where: { id: session.user.id },
+  })
+  
+  // 사용자가 존재하지 않으면 로그인 화면으로
+  if (!existingUser) {
     return <LoginClient />
   }
 

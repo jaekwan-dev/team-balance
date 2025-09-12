@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
-import { User, Phone, Loader2 } from "lucide-react"
+import { User, Phone } from "lucide-react"
 import Image from "next/image"
 import { AuthLoading } from "@/components/auth-loading"
 

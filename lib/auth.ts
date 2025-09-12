@@ -32,13 +32,15 @@ export const config = {
       },
       // OpenID Connect를 사용하도록 설정
       wellKnown: "https://kauth.kakao.com/.well-known/openid-configuration",
-      idToken: true,
       profile(profile) {
         return {
           id: profile.sub,
           name: profile.nickname || profile.name,
           email: profile.email,
           image: profile.picture || profile.profile_image_url,
+          role: "MEMBER" as const,
+          level: "ROOKIE" as const,
+          isProfileComplete: false,
         }
       },
     }),
@@ -138,16 +140,6 @@ export const config = {
     },
     async session({ session, user }) {
       if (session.user) {
-        // 사용자가 DB에 존재하는지 확인 (탈퇴한 사용자 체크)
-        const existingUser = await prisma.user.findUnique({
-          where: { id: user.id },
-        })
-        
-        // 사용자가 존재하지 않으면 세션을 null로 반환 (로그아웃 처리)
-        if (!existingUser) {
-          return null
-        }
-        
         session.user.id = user.id
         session.user.role = user.role
         session.user.level = user.level

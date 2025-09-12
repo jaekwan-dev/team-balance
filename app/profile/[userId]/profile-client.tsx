@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { User, Trophy, Calendar, MapPin } from "lucide-react"
 import type { Level, Role } from "@prisma/client"
+import Image from "next/image"
 
 // AttendanceStatus 타입 정의
 type AttendanceStatus = 'PENDING' | 'ATTEND' | 'ABSENT'
@@ -191,9 +192,11 @@ export function ProfileClient({ userId }: { userId: string }) {
               <div className="relative">
                 {user.image ? (
                   <div className="w-32 h-32 rounded-full overflow-hidden shadow-2xl border-4 border-red-600/50">
-                    <img 
+                    <Image 
                       src={user.image} 
                       alt={user.name || "프로필 이미지"} 
+                      width={128}
+                      height={128}
                       className="w-full h-full object-cover"
                     />
                   </div>
