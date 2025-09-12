@@ -1188,12 +1188,6 @@ export function DashboardClient({ user }: { user: DashboardUser }) {
                         <Share2 className="w-3 h-3 mr-1" />
                         공유
                       </Button>
-                      <Button
-                        onClick={() => setShowTeams(false)}
-                        className="text-xs px-2 py-1 bg-gray-600/50 text-gray-300 hover:bg-gray-600 hover:text-white rounded"
-                      >
-                        닫기
-                      </Button>
                     </div>
                   </div>
                   <div className="space-y-4">
