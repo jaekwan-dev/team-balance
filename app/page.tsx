@@ -11,6 +11,7 @@ export default async function HomePage() {
   const session = await auth()
 
   // 로그인하지 않은 사용자에게 로그인 화면 표시
+  // session이 null인 경우는 탈퇴한 사용자일 수도 있음
   if (!session?.user) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-red-900 flex items-center justify-center">

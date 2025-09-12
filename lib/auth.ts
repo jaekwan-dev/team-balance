@@ -138,6 +138,16 @@ export const config = {
     },
     async session({ session, user }) {
       if (session.user) {
+        // 사용자가 DB에 존재하는지 확인 (탈퇴한 사용자 체크)
+        const existingUser = await prisma.user.findUnique({
+          where: { id: user.id },
+        })
+        
+        // 사용자가 존재하지 않으면 세션을 null로 반환 (로그아웃 처리)
+        if (!existingUser) {
+          return null
+        }
+        
         session.user.id = user.id
         session.user.role = user.role
         session.user.level = user.level
