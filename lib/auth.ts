@@ -25,7 +25,6 @@ export const config = {
       checks: ["pkce", "state"],
       authorization: {
         params: {
-          prompt: "select_account", // 항상 계정 선택 화면 표시
           scope: "openid profile email", // OpenID Connect 스코프
           response_type: "code",
         },
@@ -92,7 +91,7 @@ export const config = {
       },
     },
   },
-  debug: process.env.NODE_ENV === "development",
+  debug: false, // 디버그 로그 비활성화로 성능 향상
   experimental: {
     enableWebAuthn: false,
   },
@@ -102,31 +101,13 @@ export const config = {
   },
   callbacks: {
     async signIn({ user, account, profile }) {
-      if (account?.provider === "kakao") {
-        // OpenID Connect로부터 받은 프로필 정보 처리
-        if (profile) {
-          const kakaoProfile = profile as KakaoProfile
-          
-          // OpenID Connect의 sub를 kakaoId로 사용
-          user.kakaoId = kakaoProfile.sub || account.providerAccountId
-          
-          // 닉네임 저장 (표시용)
-          user.name = kakaoProfile.nickname || kakaoProfile.preferred_username || user.name
-          
-          // 이메일 저장
-          user.email = kakaoProfile.email || user.email
-          
-          // 프로필 이미지
-          user.image = kakaoProfile.profile_image_url || user.image
-          
-          console.log("Kakao OIDC Profile:", {
-            sub: kakaoProfile.sub,
-            nickname: kakaoProfile.nickname,
-            email: kakaoProfile.email,
-            name: kakaoProfile.name,
-            email_verified: kakaoProfile.email_verified
-          })
-        }
+      if (account?.provider === "kakao" && profile) {
+        const kakaoProfile = profile as KakaoProfile
+        // 필수 정보만 빠르게 설정
+        user.kakaoId = kakaoProfile.sub || account.providerAccountId
+        user.name = kakaoProfile.nickname || user.name
+        user.email = kakaoProfile.email || user.email
+        user.image = kakaoProfile.profile_image_url || user.image
       }
       return true
     },
@@ -168,9 +149,7 @@ export const config = {
   },
   events: {
     async createUser({ user }) {
-      // 새 사용자 생성 시 기본값 설정
-      console.log("Creating new user with OIDC:", user)
-      
+      // 새 사용자 생성 시 기본값만 빠르게 설정
       await prisma.user.update({
         where: { id: user.id },
         data: {
@@ -178,9 +157,9 @@ export const config = {
           level: "ROOKIE",
           role: "MEMBER",
           isProfileComplete: false,
-          // OpenID Connect에서 받은 이메일 인증 상태 저장
           emailVerified: user.emailVerified || null,
         },
+        select: { id: true } // 필요한 필드만 반환
       })
     },
   },

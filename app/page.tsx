@@ -17,9 +17,10 @@ export default async function HomePage() {
     return <LoginClient />
   }
 
-  // 사용자가 DB에 존재하는지 확인 (탈퇴한 사용자 체크)
+  // 사용자가 DB에 존재하는지 확인 (탈퇴한 사용자 체크) - 필요한 필드만 선택
   const existingUser = await prisma.user.findUnique({
     where: { id: session.user.id },
+    select: { id: true }
   })
   
   // 사용자가 존재하지 않으면 로그인 화면으로
