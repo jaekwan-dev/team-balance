@@ -1,11 +1,12 @@
-import { auth, signOut, signIn } from "@/auth"
+import { auth, signOut } from "@/auth"
 import { Button } from "@/components/ui/button"
-import { LogOut, Zap, User, Users, Menu, Calendar, Home as HomeIcon } from "lucide-react"
+import { LogOut, User, Users, Menu, Calendar, Home as HomeIcon } from "lucide-react"
 import { DashboardClient } from "@/app/dashboard-client"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import Link from "next/link"
 import Image from "next/image"
 import { redirect } from "next/navigation"
+import { LoginClient } from "@/app/login-client"
 
 export default async function HomePage() {
   const session = await auth()
@@ -13,32 +14,7 @@ export default async function HomePage() {
   // 로그인하지 않은 사용자에게 로그인 화면 표시
   // session이 null인 경우는 탈퇴한 사용자일 수도 있음
   if (!session?.user) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-red-900 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-20 h-20 bg-gradient-to-r from-red-600 to-red-800 rounded-full flex items-center justify-center mx-auto mb-6 shadow-2xl overflow-hidden">
-            <Image src="/red_log_small.jpg" alt="PPUNGBROS Logo" width={80} height={80} className="object-cover" />
-          </div>
-          <h1 className="text-4xl font-black text-white tracking-tight mb-4">
-            PPUNG<span className="text-red-500">BROS</span>
-          </h1>
-          <p className="text-gray-300 mb-8">뻥브로스</p>
-          <form
-            action={async () => {
-              "use server"
-              await signIn("kakao", { redirectTo: "/" })
-            }}
-          >
-            <Button
-              type="submit"
-              className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-yellow-500 to-yellow-400 hover:from-yellow-600 hover:to-yellow-500 text-black font-bold rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg"
-            >
-              카카오로 로그인하기
-            </Button>
-          </form>
-        </div>
-      </div>
-    )
+    return <LoginClient />
   }
 
   // 프로필이 완료되지 않은 사용자는 프로필 설정 페이지로 리다이렉트

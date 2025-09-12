@@ -10,8 +10,9 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
-import { User, Phone } from "lucide-react"
+import { User, Phone, Loader2 } from "lucide-react"
 import Image from "next/image"
+import { AuthLoading } from "@/components/auth-loading"
 
 const profileSchema = z.object({
   name: z.string()
@@ -49,6 +50,7 @@ export default function ProfileSetupClient() {
       if (response.ok) {
         // 세션 업데이트
         await update()
+        // 로딩 상태를 유지하면서 리다이렉트
         router.push("/")
       } else {
         throw new Error("프로필 업데이트에 실패했습니다")
@@ -59,6 +61,11 @@ export default function ProfileSetupClient() {
     } finally {
       setIsLoading(false)
     }
+  }
+
+  // 제출 후 로딩 중일 때 전체 화면 로딩 표시
+  if (isLoading) {
+    return <AuthLoading />
   }
 
   return (
