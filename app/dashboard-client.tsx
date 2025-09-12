@@ -34,6 +34,7 @@ interface Schedule {
     user?: {
       id: string
       name: string | null
+      realName: string | null
       level: Level
     }
     guestName?: string | null
@@ -71,6 +72,7 @@ interface TeamMember {
   user?: {
     id: string
     name: string | null
+    realName: string | null
     level: Level
   }
   guestName?: string | null
@@ -442,7 +444,7 @@ export function DashboardClient({ user }: { user: DashboardUser }) {
       shareText += `${teamName} (${team.members.length}명)\n`
       
       const memberNames = team.members.map((member: TeamMember) => {
-        const name = member.user?.name || member.guestName || '이름없음'
+        const name = member.user?.realName || member.user?.name || member.guestName || '이름없음'
         return member.guestName ? `${name}(G)` : name
       })
       

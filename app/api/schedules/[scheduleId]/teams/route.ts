@@ -45,6 +45,7 @@ export async function GET(
               select: {
                 id: true,
                 name: true,
+                realName: true,
                 level: true
               }
             }
@@ -114,6 +115,7 @@ export async function POST(
               select: {
                 id: true,
                 name: true,
+                realName: true,
                 level: true
               }
             }

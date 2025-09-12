@@ -49,6 +49,7 @@ model User {
   id                String       @id @default(cuid())
   kakaoId           String?      @unique @map("kakao_id")
   name              String?
+  realName          String?      @map("real_name")
   email             String?      @unique
   emailVerified     DateTime?    @map("email_verified")
   image             String?

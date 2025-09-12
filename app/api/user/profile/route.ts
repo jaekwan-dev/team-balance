@@ -98,6 +98,7 @@ export async function POST(request: NextRequest) {
       where: { id: session.user.id },
       data: {
         name,
+        realName: name,  // 실제 이름을 realName 필드에도 저장
         phone,
         isProfileComplete: true,
       },
