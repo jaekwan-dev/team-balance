@@ -5,9 +5,15 @@ import { prisma } from "@/lib/prisma"
 import type { NextAuthConfig } from "next-auth"
 
 interface KakaoProfile {
+  sub?: string // OpenID Connect subject identifier
   nickname?: string
   email?: string
+  email_verified?: boolean
   profile_image_url?: string
+  name?: string // 실제 이름 (OpenID Connect에서 제공)
+  given_name?: string
+  family_name?: string
+  preferred_username?: string
 }
 
 export const config = {
@@ -20,8 +26,20 @@ export const config = {
       authorization: {
         params: {
           prompt: "select_account", // 항상 계정 선택 화면 표시
-          scope: "profile_nickname profile_image account_email", // 요청할 권한
+          scope: "openid profile email", // OpenID Connect 스코프
+          response_type: "code",
         },
+      },
+      // OpenID Connect를 사용하도록 설정
+      wellKnown: "https://kauth.kakao.com/.well-known/openid-configuration",
+      idToken: true,
+      profile(profile) {
+        return {
+          id: profile.sub,
+          name: profile.nickname || profile.name,
+          email: profile.email,
+          image: profile.picture || profile.profile_image_url,
+        }
       },
     }),
   ],
@@ -83,13 +101,29 @@ export const config = {
   callbacks: {
     async signIn({ user, account, profile }) {
       if (account?.provider === "kakao") {
-        // 카카오 프로필 정보를 사용자 정보에 추가
+        // OpenID Connect로부터 받은 프로필 정보 처리
         if (profile) {
           const kakaoProfile = profile as KakaoProfile
-          user.kakaoId = account.providerAccountId
-          user.name = kakaoProfile.nickname || user.name
+          
+          // OpenID Connect의 sub를 kakaoId로 사용
+          user.kakaoId = kakaoProfile.sub || account.providerAccountId
+          
+          // 닉네임 저장 (표시용)
+          user.name = kakaoProfile.nickname || kakaoProfile.preferred_username || user.name
+          
+          // 이메일 저장
           user.email = kakaoProfile.email || user.email
+          
+          // 프로필 이미지
           user.image = kakaoProfile.profile_image_url || user.image
+          
+          console.log("Kakao OIDC Profile:", {
+            sub: kakaoProfile.sub,
+            nickname: kakaoProfile.nickname,
+            email: kakaoProfile.email,
+            name: kakaoProfile.name,
+            email_verified: kakaoProfile.email_verified
+          })
         }
       }
       return true
@@ -108,14 +142,24 @@ export const config = {
         session.user.role = user.role
         session.user.level = user.level
         session.user.isProfileComplete = user.isProfileComplete
+        session.user.kakaoId = user.kakaoId
       }
       return session
     },
-    async jwt({ token, user }) {
+    async jwt({ token, user, account, profile }) {
+      // 초기 로그인 시
+      if (account && profile) {
+        const kakaoProfile = profile as KakaoProfile
+        token.sub = kakaoProfile.sub || account.providerAccountId
+        token.kakaoId = kakaoProfile.sub || account.providerAccountId
+        token.email_verified = kakaoProfile.email_verified
+      }
+      
       if (user) {
         token.role = user.role
         token.level = user.level
         token.isProfileComplete = user.isProfileComplete
+        token.kakaoId = user.kakaoId
       }
       return token
     },
@@ -123,6 +167,8 @@ export const config = {
   events: {
     async createUser({ user }) {
       // 새 사용자 생성 시 기본값 설정
+      console.log("Creating new user with OIDC:", user)
+      
       await prisma.user.update({
         where: { id: user.id },
         data: {
@@ -130,6 +176,8 @@ export const config = {
           level: "ROOKIE",
           role: "MEMBER",
           isProfileComplete: false,
+          // OpenID Connect에서 받은 이메일 인증 상태 저장
+          emailVerified: user.emailVerified || null,
         },
       })
     },

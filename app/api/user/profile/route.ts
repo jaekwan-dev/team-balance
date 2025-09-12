@@ -93,16 +93,39 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { name, phone } = body
 
-    // 사용자 프로필 업데이트
-    const updatedUser = await prisma.user.update({
-      where: { id: session.user.id },
-      data: {
-        name,
-        realName: name,  // 실제 이름을 realName 필드에도 저장
-        phone,
-        isProfileComplete: true,
-      },
+    // 사용자가 존재하는지 확인
+    const existingUser = await prisma.user.findUnique({
+      where: { id: session.user.id }
     })
+
+    let updatedUser
+
+    if (existingUser) {
+      // 기존 사용자 업데이트
+      updatedUser = await prisma.user.update({
+        where: { id: session.user.id },
+        data: {
+          name,
+          realName: name,  // 실제 이름을 realName 필드에도 저장
+          phone,
+          isProfileComplete: true,
+        },
+      })
+    } else {
+      // 새 사용자 생성
+      updatedUser = await prisma.user.create({
+        data: {
+          id: session.user.id,
+          name,
+          realName: name,
+          phone,
+          email: session.user.email,
+          isProfileComplete: true,
+          level: "ROOKIE",
+          role: "MEMBER",
+        },
+      })
+    }
 
     return NextResponse.json({ 
       message: "Profile updated successfully",

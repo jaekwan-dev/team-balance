@@ -1,8 +1,9 @@
 import { auth, signOut } from "@/auth"
 import { Button } from "@/components/ui/button"
-import { LogOut, Zap, User, Users, Menu, Calendar, Home } from "lucide-react"
+import { LogOut, User, Users, Menu, Calendar, Home } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import Link from "next/link"
+import Image from "next/image"
 import { ReactNode } from "react"
 
 interface CommonHeaderProps {
@@ -23,7 +24,7 @@ export async function CommonHeader({
   if (!session?.user) return null
 
   // 기본값 설정
-  const defaultIcon = <Zap className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
+  const defaultIcon = <Image src="/red_log_small.jpg" alt="PPUNGBROS Logo" width={48} height={48} className="object-cover" />
   const defaultTitle = (
     <>
       PPUNG<span className="text-red-500">BROS</span>
@@ -37,7 +38,7 @@ export async function CommonHeader({
         <div className="flex justify-between items-center py-4 sm:py-6">
           {/* 로고 및 앱 이름 */}
           <Link href="/" className="flex items-center space-x-2 sm:space-x-4">
-            <div className={`w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-r ${iconBgColor} rounded-lg flex items-center justify-center`}>
+            <div className={`w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-r ${iconBgColor} rounded-lg flex items-center justify-center overflow-hidden`}>
               {icon || defaultIcon}
             </div>
             <div>

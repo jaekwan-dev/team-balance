@@ -9,7 +9,8 @@
       "Bash(curl:*)",
       "Bash(npx tsx:*)",
       "WebSearch",
-      "Bash(dir .env)"
+      "Bash(dir .env)",
+      "Bash(dir C:UsersjaekwcursorProjectsteam-balancepublic*.jpg)"
     ],
     "deny": [],
     "ask": []

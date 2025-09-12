@@ -4,7 +4,7 @@ import { LogOut, Zap, User, Users, Menu, Calendar, Home as HomeIcon } from "luci
 import { DashboardClient } from "@/app/dashboard-client"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import Link from "next/link"
-import { FaFutbol } from "react-icons/fa"
+import Image from "next/image"
 import { redirect } from "next/navigation"
 
 export default async function HomePage() {
@@ -15,8 +15,8 @@ export default async function HomePage() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-red-900 flex items-center justify-center">
         <div className="text-center">
-          <div className="w-20 h-20 bg-gradient-to-r from-red-600 to-red-800 rounded-full flex items-center justify-center mx-auto mb-6 shadow-2xl">
-            <FaFutbol className="w-12 h-12 text-white" />
+          <div className="w-20 h-20 bg-gradient-to-r from-red-600 to-red-800 rounded-full flex items-center justify-center mx-auto mb-6 shadow-2xl overflow-hidden">
+            <Image src="/red_log_small.jpg" alt="PPUNGBROS Logo" width={80} height={80} className="object-cover" />
           </div>
           <h1 className="text-4xl font-black text-white tracking-tight mb-4">
             PPUNG<span className="text-red-500">BROS</span>
@@ -53,8 +53,8 @@ export default async function HomePage() {
           <div className="flex justify-between items-center py-4 sm:py-6">
             {/* 로고 및 앱 이름 */}
             <div className="flex items-center space-x-2 sm:space-x-4">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-r from-red-600 to-red-800 rounded-lg flex items-center justify-center">
-                <Zap className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-r from-red-600 to-red-800 rounded-lg flex items-center justify-center overflow-hidden">
+                <Image src="/red_log_small.jpg" alt="PPUNGBROS Logo" width={48} height={48} className="object-cover" />
               </div>
               <div>
                 <h1 className="text-xl sm:text-2xl lg:text-3xl font-black text-white tracking-tight">

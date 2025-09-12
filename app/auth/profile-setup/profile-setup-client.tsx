@@ -10,11 +10,16 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
-import { Zap, User, Phone } from "lucide-react"
+import { User, Phone } from "lucide-react"
+import Image from "next/image"
 
 const profileSchema = z.object({
-  name: z.string().min(2, "이름은 2글자 이상이어야 합니다"),
-  phone: z.string().min(10, "올바른 전화번호를 입력해주세요").optional(),
+  name: z.string()
+    .min(2, "이름은 2글자 이상이어야 합니다")
+    .max(4, "이름은 최대 4글자까지 입력 가능합니다"),
+  phone: z.string()
+    .regex(/^01[0-9]{9}$/, "올바른 전화번호를 입력해주세요 (예: 01012345678)")
+    .optional(),
 })
 
 type ProfileFormData = z.infer<typeof profileSchema>
@@ -64,8 +69,8 @@ export default function ProfileSetupClient() {
       <div className="w-full max-w-md mx-4">
         {/* Team Logo */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-red-600 to-red-800 rounded-full mb-4 shadow-2xl">
-            <Zap className="w-10 h-10 text-white" />
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-red-600 to-red-800 rounded-full mb-4 shadow-2xl overflow-hidden">
+            <Image src="/red_log_small.jpg" alt="PPUNGBROS Logo" width={64} height={64} className="object-cover" />
           </div>
         </div>
 
@@ -92,7 +97,8 @@ export default function ProfileSetupClient() {
                       </FormLabel>
                       <FormControl>
                         <Input 
-                          placeholder="이름을 입력하세요" 
+                          placeholder="이름을 입력하세요 (최대 4글자)" 
+                          maxLength={4}
                           className="bg-gray-900/50 border-red-600/30 text-white placeholder-gray-500 focus:border-red-500 font-mono"
                           {...field} 
                         />
@@ -113,7 +119,10 @@ export default function ProfileSetupClient() {
                       </FormLabel>
                       <FormControl>
                         <Input 
-                          placeholder="010-1234-5678" 
+                          placeholder="01012345678 (하이픈 없이)" 
+                          maxLength={11}
+                          pattern="[0-9]*"
+                          inputMode="numeric"
                           className="bg-gray-900/50 border-red-600/30 text-white placeholder-gray-500 focus:border-red-500 font-mono"
                           {...field} 
                         />
