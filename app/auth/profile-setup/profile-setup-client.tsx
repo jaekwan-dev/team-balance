@@ -126,7 +126,7 @@ export default function ProfileSetupClient() {
                       </FormLabel>
                       <FormControl>
                         <Input 
-                          placeholder="01012345678 (하이픈 없이)" 
+                          placeholder="01012345678 ('-' 없이)" 
                           maxLength={11}
                           pattern="[0-9]*"
                           inputMode="numeric"
