@@ -22,6 +22,7 @@ export async function DELETE(
         id: true,
         guestName: true,
         userId: true,
+        invitedBy: true,
         scheduleId: true
       }
     })
@@ -41,7 +42,7 @@ export async function DELETE(
 
     // 권한 확인: 관리자 또는 게스트를 초대한 사람만 삭제 가능
     const isAdmin = session.user.role === 'ADMIN'
-    const isInviter = attendance.userId === session.user.id
+    const isInviter = attendance.invitedBy === session.user.id
 
     if (!isAdmin && !isInviter) {
       return NextResponse.json({ error: "삭제 권한이 없습니다" }, { status: 403 })

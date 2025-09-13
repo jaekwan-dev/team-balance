@@ -50,12 +50,20 @@ export async function GET() {
               userId: true,
               guestName: true,
               guestLevel: true,
+              invitedBy: true,
               user: {
                 select: {
                   id: true,
                   name: true,
                   realName: true,
                   level: true
+                }
+              },
+              inviter: {
+                select: {
+                  id: true,
+                  name: true,
+                  realName: true
                 }
               }
             },
@@ -92,7 +100,8 @@ export async function GET() {
           },
           attendances: {
             where: {
-              userId: session.user.id
+              userId: session.user.id,
+              guestName: null // 게스트가 아닌 본인의 참석만
             },
             select: {
               status: true
@@ -101,10 +110,11 @@ export async function GET() {
         }
       }),
 
-      // 사용자 참석 통계
+      // 사용자 참석 통계 (본인 참석 기록만, 게스트 초대 기록 제외)
       prisma.attendance.findMany({
         where: {
-          userId: session.user.id
+          userId: session.user.id,
+          guestName: null // 게스트가 아닌 본인의 참석만
         },
         select: {
           status: true
@@ -125,7 +135,8 @@ export async function GET() {
         include: {
           attendances: {
             where: {
-              userId: session.user.id
+              userId: session.user.id,
+              guestName: null // 게스트가 아닌 본인의 참석만
             },
             select: {
               status: true

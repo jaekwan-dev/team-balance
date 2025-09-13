@@ -54,11 +54,12 @@ export async function POST(
 
     let attendance
     if (guestName) {
-      // 게스트 참석 - 새 기록 생성 (초대자 정보 포함)
+      // 게스트 참석 - 새 기록 생성 (초대자 정보를 별도 필드에 저장)
       attendance = await prisma.attendance.create({
         data: {
           scheduleId: scheduleId,
-          userId: session.user.id, // 초대자 ID 저장
+          userId: null, // 게스트는 userId를 null로 설정
+          invitedBy: session.user.id, // 초대자 ID를 별도 필드에 저장
           status,
           guestName,
           guestLevel,

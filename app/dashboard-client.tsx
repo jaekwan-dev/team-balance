@@ -40,6 +40,12 @@ interface Schedule {
     }
     guestName?: string | null
     guestLevel?: string | null
+    invitedBy?: string | null
+    inviter?: {
+      id: string
+      name: string | null
+      realName: string | null
+    }
   }[]
 }
 
@@ -919,7 +925,7 @@ export function DashboardClient({ user }: { user: DashboardUser }) {
                           {data.nextSchedule.attendances
                             .filter(a => a.status === 'ATTEND' && a.guestName)
                             .map((attendance, index) => {
-                              const inviterName = attendance.user ? attendance.user.name : null
+                              const inviterName = attendance.inviter ? attendance.inviter.name : '알 수 없음'
                               return (
                                 <div 
                                   key={attendance.id || `guest-attendance-${index}`} 
@@ -937,7 +943,7 @@ export function DashboardClient({ user }: { user: DashboardUser }) {
                                     G
                                   </Badge>
                                   {/* 게스트 삭제 버튼 - 관리자 또는 초대자만 */}
-                                  {(user.role === 'ADMIN' || attendance.userId === user.id) && (
+                                  {(user.role === 'ADMIN' || attendance.invitedBy === user.id) && (
                                     <button
                                       onClick={(e) => {
                                         e.stopPropagation()
@@ -998,7 +1004,7 @@ export function DashboardClient({ user }: { user: DashboardUser }) {
                                         G
                                       </Badge>
                                       {/* 게스트 삭제 버튼 - 관리자 또는 초대자만 */}
-                                      {(user.role === 'ADMIN' || attendance.userId === user.id) && (
+                                      {(user.role === 'ADMIN' || attendance.invitedBy === user.id) && (
                                         <button
                                           onClick={(e) => {
                                             e.stopPropagation()
@@ -1057,7 +1063,7 @@ export function DashboardClient({ user }: { user: DashboardUser }) {
                                         G
                                       </Badge>
                                       {/* 게스트 삭제 버튼 - 관리자 또는 초대자만 */}
-                                      {(user.role === 'ADMIN' || attendance.userId === user.id) && (
+                                      {(user.role === 'ADMIN' || attendance.invitedBy === user.id) && (
                                         <button
                                           onClick={(e) => {
                                             e.stopPropagation()

@@ -29,6 +29,10 @@ export async function GET(request: NextRequest) {
       where: { id: userId },
       include: {
         attendances: {
+          where: {
+            userId: userId, // 본인의 참석 기록만 조회 (게스트 초대 기록 제외)
+            guestName: null // 게스트가 아닌 본인의 참석만
+          },
           include: {
             schedule: {
               select: {

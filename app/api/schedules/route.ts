@@ -41,7 +41,8 @@ export async function GET(request: NextRequest) {
         },
         attendances: {
           where: {
-            userId: session.user.id
+            userId: session.user.id,
+            guestName: null // 게스트가 아닌 본인의 참석만
           },
           select: {
             status: true

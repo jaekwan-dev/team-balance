@@ -110,7 +110,13 @@ export async function POST(
       include: {
         attendances: {
           where: { status: 'ATTEND' },
-          include: {
+          select: {
+            id: true,
+            userId: true,
+            guestName: true,
+            guestLevel: true,
+            invitedBy: true,
+            status: true,
             user: {
               select: {
                 id: true,
@@ -167,7 +173,7 @@ export async function POST(
         name: attendance.guestName || '게스트',
         level: attendance.guestLevel || 'ROOKIE',
         isGuest: true,
-        inviterId: attendance.userId // 초대자 ID
+        inviterId: attendance.invitedBy // 초대자 ID (새로운 필드 사용)
       }))
       .sort((a, b) => b.score - a.score)
 

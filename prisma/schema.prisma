@@ -61,6 +61,7 @@ model User {
   updatedAt         DateTime     @updatedAt @map("updated_at")
   accounts          Account[]
   attendances       Attendance[]
+  invitedAttendances Attendance[] @relation("AttendanceInviter")
   comments          Comment[]
   createdSchedules  Schedule[]   @relation("ScheduleCreator")
   sessions          Session[]
@@ -93,11 +94,13 @@ model Attendance {
   userId     String?          @map("user_id")
   guestName  String?          @map("guest_name")
   guestLevel Level?           @map("guest_level")
+  invitedBy  String?          @map("invited_by")
   status     AttendanceStatus @default(PENDING)
   createdAt  DateTime         @default(now()) @map("created_at")
   updatedAt  DateTime         @updatedAt @map("updated_at")
   schedule   Schedule         @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
   user       User?            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  inviter    User?            @relation("AttendanceInviter", fields: [invitedBy], references: [id], onDelete: SetNull)
 
   @@map("attendances")
 }
