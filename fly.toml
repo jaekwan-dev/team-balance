@@ -16,7 +16,7 @@ kill_timeout = '5s'
   NODE_ENV = 'production'
   PORT = '3000'
   HOSTNAME = '0.0.0.0'
-  NEXTAUTH_URL=https://team-balance.vercel.app/
+  NEXTAUTH_URL=https://team-balance.fly.dev
   DATABASE_URL=postgresql://neondb_owner:npg_Vjhz6onrkiC5@ep-purple-math-a1x8kcj1-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require
   NEXTAUTH_SECRET=zjCq5trXdSL5nP4z3XqtKKysROMBaAjYzlKC1VWX2Og=
   KAKAO_CLIENT_ID=b499ce96674f01ca9fe55952b753dc12
