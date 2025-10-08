@@ -11,7 +11,8 @@ export const runtime = 'nodejs'
 export const revalidate = 300
 
 // Vercel Serverless Function 최대 실행 시간 (초)
-export const maxDuration = 60 // Pro: 60s, Hobby: 10s
+// Hobby plan: 10s, Pro: 60s, Enterprise: 300s
+export const maxDuration = 10
 
 export async function GET() {
   const startTime = Date.now()
@@ -134,11 +135,11 @@ export async function GET() {
           )
         ),
 
-      // 4. 최근 활동 내역 (5개)
+      // 4. 최근 활동 내역 (3개로 감소 - 성능 최적화)
       db.query.schedules.findMany({
         where: lt(schedules.date, now),
         orderBy: [desc(schedules.date)],
-        limit: 5,
+        limit: 3,
         columns: {
           id: true,
           title: true,
