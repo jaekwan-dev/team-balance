@@ -50,7 +50,19 @@ export async function PATCH(request: NextRequest) {
   try {
     const session = await auth()
     
+    console.log('[Members PATCH] Session:', { 
+      userId: session?.user?.id, 
+      role: session?.user?.role,
+      level: session?.user?.level,
+      fullUser: session?.user
+    })
+    
     if (!session?.user?.id || session.user.role !== 'ADMIN') {
+      console.error('[Members PATCH] Unauthorized:', { 
+        hasSession: !!session, 
+        hasUserId: !!session?.user?.id,
+        role: session?.user?.role
+      })
       return NextResponse.json({ error: "관리자 권한이 필요합니다" }, { status: 403 })
     }
 
