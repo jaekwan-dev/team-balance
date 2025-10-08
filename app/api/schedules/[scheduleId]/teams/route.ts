@@ -166,7 +166,7 @@ export async function POST(
         isGuest: false,
         inviterId: null
       }))
-      .sort((a, b) => b.score - a.score)
+      .sort((a: { score: number }, b: { score: number }) => b.score - a.score)
 
     const guests = attendees
       .filter((attendance: AttendanceWithUser) => attendance.guestName)
@@ -178,7 +178,7 @@ export async function POST(
         isGuest: true,
         inviterId: attendance.invitedBy // 초대자 ID (새로운 필드 사용)
       }))
-      .sort((a, b) => b.score - a.score)
+      .sort((a: { score: number }, b: { score: number }) => b.score - a.score)
 
     // 팀 초기화
     const teams = Array.from({ length: teamCount }, (_, index) => ({
