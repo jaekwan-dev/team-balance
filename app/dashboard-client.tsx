@@ -162,8 +162,9 @@ const statusLabels = {
 
 export function DashboardClient({ user }: { user: DashboardUser }) {
   // SWR for dashboard data with caching
+  // TEMP: Using /api/dashboard/simple for faster response
   const { data, error, isLoading, mutate } = useSWR<DashboardData>(
-    '/api/dashboard',
+    '/api/dashboard/simple',
     fetcher,
     {
       revalidateOnFocus: false,
