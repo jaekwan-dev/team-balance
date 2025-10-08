@@ -15,17 +15,38 @@ type AttendanceStatus = 'PENDING' | 'ATTEND' | 'ABSENT'
 
 // Fetcher function for SWR
 const fetcher = async (url: string) => {
-  const res = await fetch(url)
+  console.log('[Fetcher] Starting request:', url)
   
-  if (!res.ok) {
-    const error = new Error(`API Error: ${res.status}`)
-    console.error('[Fetcher] Error:', { url, status: res.status, statusText: res.statusText })
+  try {
+    const res = await fetch(url, {
+      credentials: 'same-origin',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+    
+    console.log('[Fetcher] Response received:', { 
+      url, 
+      status: res.status, 
+      ok: res.ok,
+      statusText: res.statusText,
+      headers: Object.fromEntries(res.headers.entries())
+    })
+    
+    if (!res.ok) {
+      const errorText = await res.text()
+      console.error('[Fetcher] Error response:', { url, status: res.status, body: errorText })
+      const error = new Error(`API Error: ${res.status} ${res.statusText}`)
+      throw error
+    }
+    
+    const data = await res.json()
+    console.log('[Fetcher] Success:', { url, dataKeys: Object.keys(data) })
+    return data
+  } catch (error) {
+    console.error('[Fetcher] Network error:', { url, error })
     throw error
   }
-  
-  const data = await res.json()
-  console.log('[Fetcher] Success:', { url, dataKeys: Object.keys(data) })
-  return data
 }
 
 interface DashboardUser {

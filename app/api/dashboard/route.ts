@@ -17,17 +17,22 @@ export async function GET() {
   const startTime = Date.now()
   
   try {
+    console.log('[Dashboard] API called, checking auth...')
     const session = await auth()
     
     if (!session?.user?.id) {
+      console.error('[Dashboard] Unauthorized: No session or user ID')
       return NextResponse.json({ error: "인증이 필요합니다" }, { status: 401 })
     }
 
     const now = new Date()
     const userId = session.user.id
     
-    console.log('[Dashboard] Starting query for user:', userId)
+    console.log('[Dashboard] Auth OK. Starting query for user:', userId, 'at', now.toISOString())
 
+    console.log('[Dashboard] Executing parallel queries...')
+    const queryStartTime = Date.now()
+    
     // ✅ 개선: 모든 독립적인 쿼리를 병렬로 실행
     const [
       nextScheduleResult,
@@ -159,6 +164,9 @@ export async function GET() {
       // 6. 전체 일정 수
       db.select({ count: count() }).from(schedules),
     ])
+    
+    const queryTime = Date.now() - queryStartTime
+    console.log(`[Dashboard] Main queries completed in ${queryTime}ms`)
 
     // ✅ 개선: N+1 문제 해결 - 모든 일정의 count를 한 번에 조회
     const allScheduleIds = [
@@ -166,6 +174,8 @@ export async function GET() {
       ...upcomingSchedulesResult.map(s => s.id),
       ...recentActivitiesResult.map(s => s.id),
     ].filter(Boolean) as string[]
+    
+    console.log('[Dashboard] Fetching counts for', allScheduleIds.length, 'schedules')
 
     let attendanceCounts: Record<string, number> = {}
     let commentCounts: Record<string, number> = {}
