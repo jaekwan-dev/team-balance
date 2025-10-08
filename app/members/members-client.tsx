@@ -50,14 +50,23 @@ export function MembersClient({ currentUserRole }: { currentUserRole: string }) 
       })
 
       if (response.ok) {
-        await fetchMembers() // 목록 새로고침
-        alert('레벨이 성공적으로 변경되었습니다!')
+        // 로컬 상태 업데이트 (화면 전환 없이)
+        setMembers(prevMembers => 
+          prevMembers.map(m => 
+            m.id === userId ? { ...m, level: newLevel } : m
+          )
+        )
+        // 간단한 성공 메시지 (console)
+        console.log('✅ 레벨이 성공적으로 변경되었습니다!')
       } else {
-        alert('레벨 변경에 실패했습니다.')
+        console.error('❌ 레벨 변경 실패:', response.status)
+        // 실패 시에만 목록 다시 불러오기
+        await fetchMembers()
       }
     } catch (error) {
-      console.error('레벨 업데이트 실패:', error)
-      alert('레벨 변경에 실패했습니다.')
+      console.error('❌ 레벨 업데이트 실패:', error)
+      // 에러 시 목록 다시 불러오기
+      await fetchMembers()
     }
   }
 
@@ -201,7 +210,10 @@ export function MembersClient({ currentUserRole }: { currentUserRole: string }) 
                       </div>
                       
                       {/* 레벨 - 관리자만 선택창 */}
-                      <div className="flex items-center space-x-2 flex-shrink-0">
+                      <div 
+                        className="flex items-center space-x-2 flex-shrink-0"
+                        onClick={(e) => e.stopPropagation()}
+                      >
                         {currentUserRole === 'ADMIN' && (
                           <Select
                             value={member.level}
@@ -209,7 +221,6 @@ export function MembersClient({ currentUserRole }: { currentUserRole: string }) 
                           >
                             <SelectTrigger 
                               className="bg-gray-800/50 border-gray-600/50 text-white text-xs h-7 w-24"
-                              onClick={(e) => e.stopPropagation()}
                             >
                               <SelectValue />
                             </SelectTrigger>
