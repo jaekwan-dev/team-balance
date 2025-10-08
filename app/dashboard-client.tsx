@@ -14,7 +14,19 @@ type Role = 'ADMIN' | 'MEMBER'
 type AttendanceStatus = 'PENDING' | 'ATTEND' | 'ABSENT'
 
 // Fetcher function for SWR
-const fetcher = (url: string) => fetch(url).then((res) => res.json())
+const fetcher = async (url: string) => {
+  const res = await fetch(url)
+  
+  if (!res.ok) {
+    const error = new Error(`API Error: ${res.status}`)
+    console.error('[Fetcher] Error:', { url, status: res.status, statusText: res.statusText })
+    throw error
+  }
+  
+  const data = await res.json()
+  console.log('[Fetcher] Success:', { url, dataKeys: Object.keys(data) })
+  return data
+}
 
 interface DashboardUser {
   id: string
@@ -163,10 +175,20 @@ export function DashboardClient({ user }: { user: DashboardUser }) {
 
   // 에러 처리
   if (error) {
+    console.error('[Dashboard] SWR Error:', error)
     return (
-      <div className="text-center py-12">
-        <p className="text-red-500">데이터를 불러오는데 실패했습니다.</p>
-        <Button onClick={() => mutate()} className="mt-4">
+      <div className="text-center py-12 space-y-4">
+        <p className="text-red-500 text-xl font-bold">데이터를 불러오는데 실패했습니다.</p>
+        <p className="text-gray-400 text-sm">
+          {error?.message || '알 수 없는 오류가 발생했습니다'}
+        </p>
+        <Button 
+          onClick={() => {
+            console.log('[Dashboard] Retrying...')
+            mutate()
+          }} 
+          className="mt-4 bg-red-600 hover:bg-red-700"
+        >
           다시 시도
         </Button>
       </div>
@@ -175,7 +197,12 @@ export function DashboardClient({ user }: { user: DashboardUser }) {
 
   // 데이터 없음
   if (!data) {
-    return null
+    console.warn('[Dashboard] No data received')
+    return (
+      <div className="text-center py-12">
+        <p className="text-gray-400">데이터가 없습니다.</p>
+      </div>
+    )
   }
 
   const updateAttendance = async (scheduleId: string, status: AttendanceStatus) => {

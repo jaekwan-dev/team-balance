@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Rajdhani, Orbitron } from "next/font/google";
 import "./globals.css";
+import "nprogress/nprogress.css";
 import { SessionProvider } from "@/components/providers/session-provider"
+import { NavigationEvents } from "@/components/navigation-events"
+import { Suspense } from "react"
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -63,6 +66,9 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} ${rajdhani.variable} ${orbitron.variable} antialiased`}
       >
         <SessionProvider>
+          <Suspense fallback={null}>
+            <NavigationEvents />
+          </Suspense>
           {children}
         </SessionProvider>
       </body>

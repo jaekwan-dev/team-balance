@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button"
 import { LogOut, User, Users, Menu, Calendar, Home as HomeIcon } from "lucide-react"
 import { DashboardClient } from "@/app/dashboard-client"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import Link from "next/link"
+import { LoadingLink } from "@/components/loading-link"
 import Image from "next/image"
 import { redirect } from "next/navigation"
 import { LoginClient } from "@/app/login-client"
@@ -73,24 +73,24 @@ export default async function HomePage() {
                             <DropdownMenuSeparator />
                             
                             <DropdownMenuItem asChild>
-                              <Link href="/" className="flex items-center">
+                              <LoadingLink href="/" className="flex items-center">
                                 <HomeIcon className="w-4 h-4 mr-2" />
                                 홈
-                              </Link>
+                              </LoadingLink>
                             </DropdownMenuItem>
                             
                             <DropdownMenuItem asChild>
-                              <Link href={`/profile/${session.user.id}`} className="flex items-center">
+                              <LoadingLink href={`/profile/${session.user.id}`} className="flex items-center">
                                 <User className="w-4 h-4 mr-2" />
                                 내 프로필
-                              </Link>
+                              </LoadingLink>
                             </DropdownMenuItem>
                             
                             <DropdownMenuItem asChild>
-                              <Link href="/members" className="flex items-center">
+                              <LoadingLink href="/members" className="flex items-center">
                                 <Users className="w-4 h-4 mr-2" />
                                 팀원 목록
-                              </Link>
+                              </LoadingLink>
                             </DropdownMenuItem>
                             
                             {session.user.role === 'ADMIN' && (
@@ -99,10 +99,10 @@ export default async function HomePage() {
                             <DropdownMenuLabel>관리자 메뉴</DropdownMenuLabel>
                             
                             <DropdownMenuItem asChild>
-                              <Link href="/admin/schedules" className="flex items-center">
+                              <LoadingLink href="/admin/schedules" className="flex items-center">
                                 <Calendar className="w-4 h-4 mr-2" />
                                 일정 관리
-                              </Link>
+                              </LoadingLink>
                             </DropdownMenuItem>
                               </>
                             )}
