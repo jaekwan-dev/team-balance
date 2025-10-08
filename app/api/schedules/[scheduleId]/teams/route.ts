@@ -136,6 +136,9 @@ export async function POST(
 
     const attendees = schedule.attendances
 
+    // Attendance 타입 정의
+    type AttendanceWithUser = typeof attendees[number]
+
     if (attendees.length < teamCount) {
       return NextResponse.json({ error: "참석자가 팀 수보다 적습니다" }, { status: 400 })
     }
@@ -154,8 +157,8 @@ export async function POST(
 
     // 참석자를 구분: 일반 멤버와 게스트
     const regularMembers = attendees
-      .filter(attendance => !attendance.guestName)
-      .map(attendance => ({
+      .filter((attendance: AttendanceWithUser) => !attendance.guestName)
+      .map((attendance: AttendanceWithUser) => ({
         attendance,
         score: levelScores[attendance.user!.level as keyof typeof levelScores],
         name: attendance.user!.name || '이름없음',
@@ -166,8 +169,8 @@ export async function POST(
       .sort((a, b) => b.score - a.score)
 
     const guests = attendees
-      .filter(attendance => attendance.guestName)
-      .map(attendance => ({
+      .filter((attendance: AttendanceWithUser) => attendance.guestName)
+      .map((attendance: AttendanceWithUser) => ({
         attendance,
         score: levelScores[attendance.guestLevel as keyof typeof levelScores] || 1,
         name: attendance.guestName || '게스트',
