@@ -1316,7 +1316,7 @@ export function DashboardClient({ user }: { user: DashboardUser }) {
         </Card>
 
         {/* 이후 경기 일정 - 간소화된 표시 */}
-        {data.upcomingSchedules && data.upcomingSchedules.length > 0 && (
+        {data.upcomingSchedules && Array.isArray(data.upcomingSchedules) && data.upcomingSchedules.length > 0 && (
           <Card className="bg-gradient-to-br from-gray-900/70 to-black/70 border-gray-500/20 backdrop-blur-sm shadow-lg">
             <CardHeader className="pb-3">
               <CardTitle className="text-lg font-bold text-white flex items-center">
