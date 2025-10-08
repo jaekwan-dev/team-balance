@@ -116,11 +116,31 @@
 @layer base {
   * {
     @apply border-border outline-ring/50;
+    /* 모바일 터치 최적화 */
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
   }
+  
+  /* 빠른 클릭 응답을 위한 요소들 */
+  button, 
+  a, 
+  [role="button"],
+  [role="menuitem"],
+  [role="tab"],
+  input[type="checkbox"],
+  input[type="radio"] {
+    touch-action: manipulation;
+    cursor: pointer;
+  }
+  
   body {
     @apply bg-background text-foreground;
     font-family: var(--font-rajdhani), system-ui, sans-serif;
     font-weight: 500;
+    /* GPU 가속 활성화 */
+    transform: translateZ(0);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
   
   /* F1 Racing Typography */

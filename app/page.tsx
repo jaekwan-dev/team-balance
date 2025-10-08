@@ -60,7 +60,7 @@ export default async function HomePage() {
                             <Button 
                               variant="outline" 
                               size="sm"
-                              className="border-gray-600/50 text-gray-300 hover:bg-gray-700/50 hover:text-white transition-all duration-300"
+                              className="border-gray-600/50 text-gray-300 hover:bg-gray-700/50 hover:text-white transition-colors duration-150 active:scale-95"
                             >
                               <Menu className="w-4 h-4" />
                               <span className="hidden sm:inline ml-2">메뉴</span>
