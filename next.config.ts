@@ -1,9 +1,6 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Enable standalone output for Docker deployment
-  output: 'standalone',
-  
   images: {
     remotePatterns: [
       {
@@ -29,11 +26,8 @@ const nextConfig: NextConfig = {
     ],
   },
   
-  // Experimental features for better performance
-  experimental: {
-    // Enable server components logging
-    serverComponentsExternalPackages: ['@prisma/client'],
-  },
+  // Cloudflare Pages 호환성을 위한 설정
+  serverExternalPackages: ['@prisma/client', 'prisma'],
 };
 
 export default nextConfig;

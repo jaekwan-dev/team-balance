@@ -1,0 +1,20 @@
+# Cloudflare Pages 설정
+name = "team-balance"
+compatibility_date = "2024-10-08"
+pages_build_output_dir = ".next"
+
+[build]
+command = "pnpm build"
+
+[build.upload]
+format = "service-worker"
+
+# 환경 변수는 Cloudflare Dashboard에서 설정
+# 또는 CLI로 설정: wrangler pages secret put <KEY>
+# 
+# 필요한 환경 변수:
+# - DATABASE_URL: PostgreSQL 연결 문자열
+# - NEXTAUTH_URL: 배포된 URL (예: https://team-balance.pages.dev)
+# - NEXTAUTH_SECRET: 랜덤 시크릿 키 (최소 32자)
+# - KAKAO_CLIENT_ID: Kakao OAuth 클라이언트 ID
+# - KAKAO_CLIENT_SECRET: Kakao OAuth 클라이언트 시크릿
