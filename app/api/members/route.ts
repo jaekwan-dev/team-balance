@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@/auth"
-import { prisma } from "@/lib/prisma"
+import { auth } from "@/lib/auth"
+import { db } from "@/lib/db"
+import { users } from "@/lib/db/schema"
+import { desc, eq } from "drizzle-orm"
 
-// Node.js 런타임 사용 (Prisma 호환성)
+// Node.js 런타임 사용
 export const runtime = 'nodejs'
 
 // 모든 팀원 목록 조회 (일반 사용자도 접근 가능)
@@ -14,24 +16,26 @@ export async function GET() {
       return NextResponse.json({ error: "인증이 필요합니다" }, { status: 401 })
     }
 
-    // 모든 사용자 조회 (권한에 따라 다른 정보 제공)
-    const users = await prisma.user.findMany({
-      select: {
-        id: true,
-        name: true,
-        email: session.user.role === 'ADMIN' ? true : false, // 관리자만 이메일 조회
-        phone: session.user.role === 'ADMIN' ? true : false, // 관리자만 전화번호 조회
-        level: true,
-        role: true,
-        isProfileComplete: true,
-        createdAt: true,
-      },
-      orderBy: {
-        createdAt: 'desc'
-      }
+    const isAdmin = session.user.role === 'ADMIN'
+
+    // 모든 사용자 조회
+    const allUsers = await db.query.users.findMany({
+      orderBy: [desc(users.createdAt)],
     })
 
-    return NextResponse.json({ users })
+    // 권한에 따라 이메일/전화번호 필터링
+    const usersList = allUsers.map(user => ({
+      id: user.id,
+      name: user.name,
+      email: isAdmin ? user.email : null,
+      phone: isAdmin ? user.phone : null,
+      level: user.level,
+      role: user.role,
+      isProfileComplete: user.isProfileComplete,
+      createdAt: user.createdAt,
+    }))
+
+    return NextResponse.json({ users: usersList })
   } catch (error) {
     console.error("Get members error:", error)
     return NextResponse.json(
@@ -57,19 +61,19 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: "사용자 ID와 레벨이 필요합니다" }, { status: 400 })
     }
 
-    const updatedUser = await prisma.user.update({
-      where: { id: userId },
-      data: { level },
-      select: {
-        id: true,
-        name: true,
-        level: true,
-      }
-    })
+    const updatedUser = await db
+      .update(users)
+      .set({ level, updatedAt: new Date() })
+      .where(eq(users.id, userId))
+      .returning({
+        id: users.id,
+        name: users.name,
+        level: users.level,
+      })
 
     return NextResponse.json({ 
       message: "레벨이 업데이트되었습니다",
-      user: updatedUser 
+      user: updatedUser[0] 
     })
   } catch (error) {
     console.error("Update member level error:", error)

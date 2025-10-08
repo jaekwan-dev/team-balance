@@ -1,8 +1,10 @@
 import NextAuth from "next-auth"
 import KakaoProvider from "next-auth/providers/kakao"
-import { PrismaAdapter } from "@auth/prisma-adapter"
-import { prisma } from "@/lib/prisma"
+import { DrizzleAdapter } from "@auth/drizzle-adapter"
+import { db } from "@/lib/db"
 import type { NextAuthConfig } from "next-auth"
+import { eq } from "drizzle-orm"
+import { users } from "@/lib/db/schema"
 
 interface KakaoProfile {
   sub?: string // OpenID Connect subject identifier
@@ -17,7 +19,7 @@ interface KakaoProfile {
 }
 
 export const config = {
-  adapter: PrismaAdapter(prisma),
+  adapter: DrizzleAdapter(db),
   providers: [
     KakaoProvider({
       clientId: process.env.KAKAO_CLIENT_ID!,
@@ -150,17 +152,15 @@ export const config = {
   events: {
     async createUser({ user }) {
       // 새 사용자 생성 시 기본값만 빠르게 설정
-      await prisma.user.update({
-        where: { id: user.id },
-        data: {
+      await db.update(users)
+        .set({
           kakaoId: user.kakaoId,
           level: "ROOKIE",
           role: "MEMBER",
           isProfileComplete: false,
           emailVerified: user.emailVerified || null,
-        },
-        select: { id: true } // 필요한 필드만 반환
-      })
+        })
+        .where(eq(users.id, user.id))
     },
   },
 } satisfies NextAuthConfig
