@@ -56,12 +56,14 @@ git push origin main
 
 #### Step 3: 빌드 설정
 ```
-프레임워크 프리셋: Next.js
-빌드 명령어: pnpm build
-빌드 출력 디렉토리: .next
+프레임워크 프리셋: Next.js (Static)
+빌드 명령어: npx @cloudflare/next-on-pages
+빌드 출력 디렉토리: .vercel/output/static
 루트 디렉토리: /
 Node.js 버전: 18
 ```
+
+**중요:** `@cloudflare/next-on-pages`를 사용하여 Next.js를 Cloudflare Workers 호환 형식으로 변환합니다.
 
 #### Step 4: 환경 변수 설정
 **Settings** → **Environment variables**에서 추가:
@@ -85,7 +87,7 @@ KAKAO_CLIENT_SECRET = <Kakao 클라이언트 시크릿>
 
 #### Step 1: 빌드
 ```bash
-pnpm build
+pnpm build:cf
 ```
 
 #### Step 2: Wrangler로 배포
@@ -96,6 +98,8 @@ pnpm wrangler pages project create team-balance
 # 배포
 pnpm pages:deploy
 ```
+
+**빌드 결과:** `.vercel/output/static` 디렉토리에 Cloudflare Workers 호환 빌드가 생성됩니다.
 
 #### Step 3: 환경 변수 설정
 ```bash
