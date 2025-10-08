@@ -12,6 +12,7 @@ if (!connectionString) {
 // Connection pool for queries
 const queryClient = postgres(connectionString, {
   prepare: false, // Required for connection pooling (pgbouncer)
+  max: 1, // Supabase recommends max 1 for serverless
 })
 
 export const db = drizzle(queryClient, { schema })
@@ -19,6 +20,6 @@ export const db = drizzle(queryClient, { schema })
 // For migrations (direct connection)
 export const getMigrationDb = () => {
   const directUrl = process.env.DIRECT_URL || connectionString
-  const migrationClient = postgres(directUrl)
+  const migrationClient = postgres(directUrl, { max: 1 })
   return drizzle(migrationClient, { schema })
 }

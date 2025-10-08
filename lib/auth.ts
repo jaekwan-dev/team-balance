@@ -1,10 +1,8 @@
 import NextAuth from "next-auth"
 import KakaoProvider from "next-auth/providers/kakao"
-import { DrizzleAdapter } from "@auth/drizzle-adapter"
-import { db } from "@/lib/db"
+import { PrismaAdapter } from "@auth/prisma-adapter"
+import { prisma } from "@/lib/prisma"
 import type { NextAuthConfig } from "next-auth"
-import { eq } from "drizzle-orm"
-import { users } from "@/lib/db/schema"
 
 interface KakaoProfile {
   sub?: string // OpenID Connect subject identifier
@@ -19,7 +17,11 @@ interface KakaoProfile {
 }
 
 export const config = {
-  adapter: DrizzleAdapter(db),
+  adapter: PrismaAdapter(prisma),
+  session: {
+    strategy: "jwt", // JWT 세션 전략 사용 (Database 세션이 작동하지 않음)
+    maxAge: 30 * 24 * 60 * 60, // 30 days
+  },
   providers: [
     KakaoProvider({
       clientId: process.env.KAKAO_CLIENT_ID!,
@@ -93,7 +95,7 @@ export const config = {
       },
     },
   },
-  debug: false, // 디버그 로그 비활성화로 성능 향상
+  debug: true, // 디버그 로그 활성화하여 문제 확인
   experimental: {
     enableWebAuthn: false,
   },
@@ -103,15 +105,21 @@ export const config = {
   },
   callbacks: {
     async signIn({ user, account, profile }) {
-      if (account?.provider === "kakao" && profile) {
-        const kakaoProfile = profile as KakaoProfile
-        // 필수 정보만 빠르게 설정
-        user.kakaoId = kakaoProfile.sub || account.providerAccountId
-        user.name = kakaoProfile.nickname || user.name
-        user.email = kakaoProfile.email || user.email
-        user.image = kakaoProfile.profile_image_url || user.image
+      try {
+        if (account?.provider === "kakao" && profile) {
+          const kakaoProfile = profile as KakaoProfile
+          // 필수 정보만 빠르게 설정
+          user.kakaoId = kakaoProfile.sub || account.providerAccountId
+          user.name = kakaoProfile.nickname || user.name
+          user.email = kakaoProfile.email || user.email
+          user.image = kakaoProfile.profile_image_url || user.image
+        }
+        console.log('[AUTH] Sign in successful:', { userId: user.id, provider: account?.provider })
+        return true
+      } catch (error) {
+        console.error('[AUTH] Sign in error:', error)
+        return false
       }
-      return true
     },
     async redirect({ url, baseUrl }) {
       // 상대 URL인 경우 baseUrl과 결합
@@ -121,13 +129,14 @@ export const config = {
       // 외부 URL인 경우 baseUrl로 리다이렉트
       return baseUrl
     },
-    async session({ session, user }) {
-      if (session.user) {
-        session.user.id = user.id
-        session.user.role = user.role
-        session.user.level = user.level
-        session.user.isProfileComplete = user.isProfileComplete
-        session.user.kakaoId = user.kakaoId
+    async session({ session, token }) {
+      // JWT 세션 전략에서는 token 객체가 제공됨
+      if (session.user && token) {
+        session.user.id = token.sub as string
+        session.user.role = (token.role as "ADMIN" | "MEMBER") || "MEMBER"
+        session.user.level = (token.level as "PRO" | "SEMI_PRO_1" | "SEMI_PRO_2" | "SEMI_PRO_3" | "AMATEUR_1" | "AMATEUR_2" | "AMATEUR_3" | "AMATEUR_4" | "AMATEUR_5" | "BEGINNER_1" | "BEGINNER_2" | "BEGINNER_3" | "ROOKIE") || "ROOKIE"
+        session.user.isProfileComplete = (token.isProfileComplete as boolean) || false
+        session.user.kakaoId = token.kakaoId as string
       }
       return session
     },
@@ -140,6 +149,7 @@ export const config = {
         token.email_verified = kakaoProfile.email_verified
       }
       
+      // user 정보를 token에 저장
       if (user) {
         token.role = user.role
         token.level = user.level
@@ -151,16 +161,24 @@ export const config = {
   },
   events: {
     async createUser({ user }) {
-      // 새 사용자 생성 시 기본값만 빠르게 설정
-      await db.update(users)
-        .set({
-          kakaoId: user.kakaoId,
-          level: "ROOKIE",
-          role: "MEMBER",
-          isProfileComplete: false,
-          emailVerified: user.emailVerified || null,
+      try {
+        console.log('[AUTH] Creating new user:', { userId: user.id, email: user.email })
+        // 새 사용자 생성 시 기본값만 빠르게 설정
+        await prisma.user.update({
+          where: { id: user.id },
+          data: {
+            kakaoId: user.kakaoId,
+            level: "ROOKIE",
+            role: "MEMBER",
+            isProfileComplete: false,
+            emailVerified: user.emailVerified || null,
+          },
+          select: { id: true }
         })
-        .where(eq(users.id, user.id))
+        console.log('[AUTH] User created successfully:', user.id)
+      } catch (error) {
+        console.error('[AUTH] Error creating user:', error)
+      }
     },
   },
 } satisfies NextAuthConfig
