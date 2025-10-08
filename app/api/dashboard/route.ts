@@ -10,7 +10,12 @@ export const runtime = 'nodejs'
 // 캐시 설정 (5분)
 export const revalidate = 300
 
+// Vercel Serverless Function 최대 실행 시간 (초)
+export const maxDuration = 60 // Pro: 60s, Hobby: 10s
+
 export async function GET() {
+  const startTime = Date.now()
+  
   try {
     const session = await auth()
     
@@ -20,6 +25,8 @@ export async function GET() {
 
     const now = new Date()
     const userId = session.user.id
+    
+    console.log('[Dashboard] Starting query for user:', userId)
 
     // ✅ 개선: 모든 독립적인 쿼리를 병렬로 실행
     const [
@@ -237,6 +244,9 @@ export async function GET() {
       ? Math.round((attendedCount / totalAttendances) * 100) 
       : 0
 
+    const executionTime = Date.now() - startTime
+    console.log(`[Dashboard] Query completed in ${executionTime}ms`)
+    
     return NextResponse.json({
       nextSchedule,
       upcomingSchedules,
@@ -248,7 +258,8 @@ export async function GET() {
       },
     })
   } catch (error) {
-    console.error("Dashboard data fetch error:", error)
+    const executionTime = Date.now() - startTime
+    console.error(`[Dashboard] Error after ${executionTime}ms:`, error)
     return NextResponse.json(
       { error: "서버 오류가 발생했습니다" },
       { status: 500 }
