@@ -140,7 +140,7 @@ export const config = {
       }
       return session
     },
-    async jwt({ token, user, account, profile }) {
+    async jwt({ token, user, account, profile, trigger }) {
       // 초기 로그인 시
       if (account && profile) {
         const kakaoProfile = profile as KakaoProfile
@@ -149,13 +149,31 @@ export const config = {
         token.email_verified = kakaoProfile.email_verified
       }
       
-      // user 정보를 token에 저장
+      // user 정보를 token에 저장 (초기 로그인 시)
       if (user) {
         token.role = user.role
         token.level = user.level
         token.isProfileComplete = user.isProfileComplete
         token.kakaoId = user.kakaoId
       }
+      
+      // 매 요청마다 DB에서 최신 role/level 확인 (세션 갱신)
+      if (token.sub && !user) {
+        try {
+          const dbUser = await prisma.user.findUnique({
+            where: { id: token.sub },
+            select: { role: true, level: true, isProfileComplete: true },
+          })
+          if (dbUser) {
+            token.role = dbUser.role
+            token.level = dbUser.level
+            token.isProfileComplete = dbUser.isProfileComplete
+          }
+        } catch (error) {
+          console.error('[AUTH] JWT refresh error:', error)
+        }
+      }
+      
       return token
     },
   },
