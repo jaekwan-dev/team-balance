@@ -1,15 +1,20 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
+import useSWR from "swr"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Users, Timer, MapPin, Clock, Check, X, Clock as ClockIcon, Edit3, Trash2, MessageCircle, Send, Share2 } from "lucide-react"
+import { DashboardSkeleton } from "@/components/dashboard-skeleton"
 
 // 타입 정의
 type Level = 'PRO' | 'SEMI_PRO_1' | 'SEMI_PRO_2' | 'SEMI_PRO_3' | 'AMATEUR_1' | 'AMATEUR_2' | 'AMATEUR_3' | 'AMATEUR_4' | 'AMATEUR_5' | 'BEGINNER_1' | 'BEGINNER_2' | 'BEGINNER_3' | 'ROOKIE'
 type Role = 'ADMIN' | 'MEMBER'
 type AttendanceStatus = 'PENDING' | 'ATTEND' | 'ABSENT'
+
+// Fetcher function for SWR
+const fetcher = (url: string) => fetch(url).then((res) => res.json())
 
 interface DashboardUser {
   id: string
@@ -123,8 +128,17 @@ const statusLabels = {
 }
 
 export function DashboardClient({ user }: { user: DashboardUser }) {
-  const [data, setData] = useState<DashboardData | null>(null)
-  const [loading, setLoading] = useState(true)
+  // SWR for dashboard data with caching
+  const { data, error, isLoading, mutate } = useSWR<DashboardData>(
+    '/api/dashboard',
+    fetcher,
+    {
+      revalidateOnFocus: false,
+      dedupingInterval: 60000, // 1분간 중복 요청 방지
+      refreshInterval: 300000, // 5분마다 자동 갱신
+    }
+  )
+
   const [attendanceLoading, setAttendanceLoading] = useState(false)
   const [guestName, setGuestName] = useState('')
   const [guestLevel, setGuestLevel] = useState('ROOKIE')
@@ -142,29 +156,26 @@ export function DashboardClient({ user }: { user: DashboardUser }) {
   const [showRevote, setShowRevote] = useState(false)
   const [deletingGuest, setDeletingGuest] = useState<string | null>(null)
 
-  useEffect(() => {
-    fetchDashboardData()
-  }, [])
+  // 로딩 중이면 Skeleton 표시
+  if (isLoading) {
+    return <DashboardSkeleton />
+  }
 
-  useEffect(() => {
-    // 다음 경기의 팀편성 결과가 있는지 확인
-    if (data?.nextSchedule?.id) {
-      fetchTeamFormation(data.nextSchedule.id)
-    }
-  }, [data?.nextSchedule?.id])
+  // 에러 처리
+  if (error) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-red-500">데이터를 불러오는데 실패했습니다.</p>
+        <Button onClick={() => mutate()} className="mt-4">
+          다시 시도
+        </Button>
+      </div>
+    )
+  }
 
-  const fetchDashboardData = async () => {
-    try {
-      const response = await fetch('/api/dashboard')
-      if (response.ok) {
-        const dashboardData: DashboardData = await response.json()
-        setData(dashboardData)
-      }
-    } catch (error) {
-      console.error('Failed to fetch dashboard data:', error)
-    } finally {
-      setLoading(false)
-    }
+  // 데이터 없음
+  if (!data) {
+    return null
   }
 
   const updateAttendance = async (scheduleId: string, status: AttendanceStatus) => {
@@ -194,7 +205,7 @@ export function DashboardClient({ user }: { user: DashboardUser }) {
         alert(status === 'ATTEND' ? '참석으로 등록되었습니다!' : '불참으로 등록되었습니다!')
         
         // 데이터 새로고침 후 UI 업데이트
-        await fetchDashboardData()
+        await mutate()
       } else {
         const error = await response.json()
         alert(error.error || '참석 상태 업데이트에 실패했습니다')
@@ -247,7 +258,7 @@ export function DashboardClient({ user }: { user: DashboardUser }) {
         alert('게스트 참석이 등록되었습니다!')
         
         // 백그라운드에서 데이터 새로고침
-        fetchDashboardData()
+        mutate()
       } else {
         alert('게스트 참석 등록에 실패했습니다')
       }
@@ -276,7 +287,7 @@ export function DashboardClient({ user }: { user: DashboardUser }) {
         // 팀편성 결과 가져오기
         await fetchTeamFormation(scheduleId)
         // 대시보드 데이터도 새로고침하여 다른 사용자들도 팀편성 결과를 볼 수 있게 함
-        await fetchDashboardData()
+        await mutate()
       } else {
         const error = await response.json()
         alert(error.error || '팀편성에 실패했습니다')
@@ -307,7 +318,7 @@ export function DashboardClient({ user }: { user: DashboardUser }) {
 
       if (response.ok) {
         alert('일정이 삭제되었습니다.')
-        await fetchDashboardData() // 대시보드 데이터 새로고침
+        await mutate() // 대시보드 데이터 새로고침
       } else {
         const error = await response.json()
         alert(error.error || '일정 삭제에 실패했습니다.')
@@ -409,7 +420,7 @@ export function DashboardClient({ user }: { user: DashboardUser }) {
         alert('게스트 참석이 취소되었습니다!')
         
         // 백그라운드에서 데이터 새로고침
-        fetchDashboardData()
+        mutate()
       } else {
         const error = await response.json()
         alert(error.error || '게스트 참석 취소에 실패했습니다.')
@@ -515,16 +526,7 @@ export function DashboardClient({ user }: { user: DashboardUser }) {
     document.body.removeChild(textArea)
   }
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <div className="text-center">
-          <div className="w-12 h-12 border-4 border-red-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-400 racing-mono">Loading...</p>
-        </div>
-      </div>
-    )
-  }
+  // 로딩 상태는 위에서 이미 처리됨 (Skeleton UI)
 
   if (!data) {
     return (
