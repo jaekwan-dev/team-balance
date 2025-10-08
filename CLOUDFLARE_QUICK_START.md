@@ -26,12 +26,15 @@ Node version: 18
 **Settings** → **Environment variables**에 추가:
 
 ```env
-DATABASE_URL=<Neon PostgreSQL URL>
+DATABASE_URL=postgresql://postgres.[REF]:[PASSWORD]@...pooler.supabase.com:6543/postgres?pgbouncer=true
+DIRECT_URL=postgresql://postgres.[REF]:[PASSWORD]@...pooler.supabase.com:5432/postgres
 NEXTAUTH_URL=https://<프로젝트명>.pages.dev
 NEXTAUTH_SECRET=<생성한 랜덤 키>
 KAKAO_CLIENT_ID=<Kakao ID>
 KAKAO_CLIENT_SECRET=<Kakao Secret>
 ```
+
+**Supabase 설정:** [SUPABASE_SETUP.md](./SUPABASE_SETUP.md) 참고
 
 **NEXTAUTH_SECRET 생성:**
 ```powershell

@@ -12,12 +12,22 @@ TeamBalance 프로젝트를 Cloudflare Pages에 배포하는 방법입니다.
 다음 값들을 미리 준비하세요:
 
 ```env
-DATABASE_URL="postgresql://user:pass@host:5432/db?sslmode=require"
+# Supabase Database (Connection Pooling)
+DATABASE_URL="postgresql://postgres.[REF]:[PASSWORD]@aws-0-ap-northeast-1.pooler.supabase.com:6543/postgres?pgbouncer=true"
+
+# Direct Connection (for migrations)
+DIRECT_URL="postgresql://postgres.[REF]:[PASSWORD]@aws-0-ap-northeast-1.pooler.supabase.com:5432/postgres"
+
 NEXTAUTH_URL="https://your-app.pages.dev"
 NEXTAUTH_SECRET="<32자 이상 랜덤 문자열>"
 KAKAO_CLIENT_ID="your-kakao-id"
 KAKAO_CLIENT_SECRET="your-kakao-secret"
 ```
+
+**Supabase 설정:**
+- [Supabase 설정 가이드](./SUPABASE_SETUP.md) 참고
+- Connection Pooling 사용 (포트 6543)
+- Direct URL 필수 (마이그레이션용)
 
 **NEXTAUTH_SECRET 생성:**
 ```powershell
@@ -58,7 +68,8 @@ Node.js 버전: 18
 
 **Production 환경:**
 ```
-DATABASE_URL = <Neon PostgreSQL URL>
+DATABASE_URL = postgresql://postgres.[REF]:[PASSWORD]@aws-0-ap-northeast-1.pooler.supabase.com:6543/postgres?pgbouncer=true
+DIRECT_URL = postgresql://postgres.[REF]:[PASSWORD]@aws-0-ap-northeast-1.pooler.supabase.com:5432/postgres
 NEXTAUTH_URL = https://<프로젝트명>.pages.dev
 NEXTAUTH_SECRET = <생성한 랜덤 키>
 KAKAO_CLIENT_ID = <Kakao 클라이언트 ID>
@@ -89,6 +100,7 @@ pnpm pages:deploy
 #### Step 3: 환경 변수 설정
 ```bash
 pnpm wrangler pages secret put DATABASE_URL
+pnpm wrangler pages secret put DIRECT_URL
 pnpm wrangler pages secret put NEXTAUTH_URL
 pnpm wrangler pages secret put NEXTAUTH_SECRET
 pnpm wrangler pages secret put KAKAO_CLIENT_ID
@@ -160,23 +172,36 @@ https://teambalance.com/api/auth/callback/kakao
 
 ## 📊 데이터베이스 설정
 
-### Neon PostgreSQL (현재 사용 중)
+### Supabase PostgreSQL (현재 사용 중)
 
 **장점:**
-- ✅ Cloudflare와 글로벌 엣지 네트워크 연동
-- ✅ 무료 티어 제공 (0.5GB 스토리지)
-- ✅ Serverless PostgreSQL
-- ✅ 자동 스케일링
+- ✅ PostgreSQL 15 + 추가 기능 (Auth, Storage, Edge Functions)
+- ✅ 무료 티어 제공 (500MB 스토리지, 2GB 전송)
+- ✅ Connection Pooling 내장 (pgbouncer)
+- ✅ 글로벌 CDN 및 엣지 네트워크
+- ✅ 실시간 데이터베이스 기능
+- ✅ 자동 백업 및 Point-in-Time Recovery
 
-**DATABASE_URL 형식:**
+**연결 문자열 형식:**
+```bash
+# Connection Pooling (앱 사용)
+DATABASE_URL="postgresql://postgres.[REF]:[PASSWORD]@aws-0-ap-northeast-1.pooler.supabase.com:6543/postgres?pgbouncer=true"
+
+# Direct Connection (마이그레이션)
+DIRECT_URL="postgresql://postgres.[REF]:[PASSWORD]@aws-0-ap-northeast-1.pooler.supabase.com:5432/postgres"
 ```
-postgresql://username:password@hostname:port/database?sslmode=require
-```
+
+**Supabase 설정:**
+- 상세 가이드: [SUPABASE_SETUP.md](./SUPABASE_SETUP.md)
+- 프로젝트 생성: https://supabase.com
 
 **마이그레이션 실행:**
 ```bash
 # 로컬에서 마이그레이션 적용
 pnpm db:migrate
+
+# 또는
+pnpm prisma migrate deploy
 ```
 
 ---
