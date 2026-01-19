@@ -6,22 +6,23 @@ import { eq, and, gte, asc, count, sql } from 'drizzle-orm'
 
 export const runtime = 'nodejs'
 export const maxDuration = 10
-export const revalidate = 300 // 5분 캐싱
+// auth()가 headers를 사용하므로 동적 렌더링 필요
+export const dynamic = 'force-dynamic'
 
 export async function GET() {
   const startTime = Date.now()
-  
+
   try {
     console.log('[Dashboard Simple] Starting...')
     const session = await auth()
-    
+
     if (!session?.user?.id) {
       return NextResponse.json({ error: "인증이 필요합니다" }, { status: 401 })
     }
 
     const now = new Date()
     const userId = session.user.id
-    
+
     // 최소한의 쿼리만 실행
     const [nextSchedule, userStats, totalMembers] = await Promise.all([
       // 다음 경기만 (참석자 목록 포함)
@@ -72,7 +73,7 @@ export async function GET() {
           },
         },
       }),
-      
+
       // 사용자 참석률
       db.select({ status: attendances.status })
         .from(attendances)
@@ -80,14 +81,14 @@ export async function GET() {
           eq(attendances.userId, userId),
           sql`${attendances.guestName} IS NULL`
         )),
-      
+
       // 전체 회원 수
       db.select({ count: count() }).from(users),
     ])
-    
+
     const executionTime = Date.now() - startTime
     console.log(`[Dashboard Simple] Completed in ${executionTime}ms`)
-    
+
     // Add counts for next schedule
     let nextScheduleWithCount = null
     if (nextSchedule) {
@@ -99,7 +100,7 @@ export async function GET() {
           .from(comments)
           .where(eq(comments.scheduleId, nextSchedule.id)),
       ])
-      
+
       nextScheduleWithCount = {
         ...nextSchedule,
         _count: {
@@ -108,13 +109,13 @@ export async function GET() {
         },
       }
     }
-    
+
     const totalAttendances = userStats.length
     const attendedCount = userStats.filter(a => a.status === 'ATTEND').length
-    const attendanceRate = totalAttendances > 0 
-      ? Math.round((attendedCount / totalAttendances) * 100) 
+    const attendanceRate = totalAttendances > 0
+      ? Math.round((attendedCount / totalAttendances) * 100)
       : 0
-    
+
     return NextResponse.json({
       nextSchedule: nextScheduleWithCount,
       upcomingSchedules: [],

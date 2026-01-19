@@ -7,8 +7,8 @@ import { eq, and, gte, lt, desc, asc, count, sql, inArray } from "drizzle-orm"
 // Node.js 런타임 사용
 export const runtime = 'nodejs'
 
-// 캐시 설정 (5분)
-export const revalidate = 300
+// auth()가 headers를 사용하므로 동적 렌더링 필요
+export const dynamic = 'force-dynamic'
 
 // Vercel Serverless Function 최대 실행 시간 (초)
 // Hobby plan: 10s, Pro: 60s, Enterprise: 300s
@@ -16,11 +16,11 @@ export const maxDuration = 10
 
 export async function GET() {
   const startTime = Date.now()
-  
+
   try {
     console.log('[Dashboard] API called, checking auth...')
     const session = await auth()
-    
+
     if (!session?.user?.id) {
       console.error('[Dashboard] Unauthorized: No session or user ID')
       return NextResponse.json({ error: "인증이 필요합니다" }, { status: 401 })
@@ -28,12 +28,12 @@ export async function GET() {
 
     const now = new Date()
     const userId = session.user.id
-    
+
     console.log('[Dashboard] Auth OK. Starting query for user:', userId, 'at', now.toISOString())
 
     console.log('[Dashboard] Executing parallel queries...')
     const queryStartTime = Date.now()
-    
+
     // ✅ 개선: 모든 독립적인 쿼리를 병렬로 실행
     const [
       nextScheduleResult,
@@ -165,7 +165,7 @@ export async function GET() {
       // 6. 전체 일정 수
       db.select({ count: count() }).from(schedules),
     ])
-    
+
     const queryTime = Date.now() - queryStartTime
     console.log(`[Dashboard] Main queries completed in ${queryTime}ms`)
 
@@ -175,7 +175,7 @@ export async function GET() {
       ...upcomingSchedulesResult.map(s => s.id),
       ...recentActivitiesResult.map(s => s.id),
     ].filter(Boolean) as string[]
-    
+
     console.log('[Dashboard] Fetching counts for', allScheduleIds.length, 'schedules')
 
     let attendanceCounts: Record<string, number> = {}
@@ -248,16 +248,16 @@ export async function GET() {
     // 통계 계산
     const totalMembers = Number(totalMembersResult[0]?.count || 0)
     const totalSchedules = Number(totalSchedulesResult[0]?.count || 0)
-    
+
     const totalAttendances = userAttendanceStats.length
     const attendedCount = userAttendanceStats.filter((a) => a.status === 'ATTEND').length
-    const attendanceRate = totalAttendances > 0 
-      ? Math.round((attendedCount / totalAttendances) * 100) 
+    const attendanceRate = totalAttendances > 0
+      ? Math.round((attendedCount / totalAttendances) * 100)
       : 0
 
     const executionTime = Date.now() - startTime
     console.log(`[Dashboard] Query completed in ${executionTime}ms`)
-    
+
     return NextResponse.json({
       nextSchedule,
       upcomingSchedules,
