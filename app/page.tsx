@@ -22,7 +22,7 @@ export default async function HomePage() {
     where: { id: session.user.id },
     select: { id: true }
   })
-  
+
   // 사용자가 존재하지 않으면 로그인 화면으로
   if (!existingUser) {
     return <LoginClient />
@@ -53,80 +53,78 @@ export default async function HomePage() {
                 </p>
               </div>
             </div>
-            
-                                    {/* 컨텍스트 메뉴 */}
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              className="border-gray-600/50 text-gray-300 hover:bg-gray-700/50 hover:text-white active:scale-95"
-                            >
-                              <Menu className="w-4 h-4" />
-                              <span className="hidden sm:inline ml-2">메뉴</span>
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-48">
-                            <DropdownMenuLabel>
-                              {session.user.name || '사용자'} ({session.user.level})
-                            </DropdownMenuLabel>
-                            <DropdownMenuSeparator />
-                            
-                            <DropdownMenuItem asChild>
-                              <LoadingLink href="/" className="flex items-center">
-                                <HomeIcon className="w-4 h-4 mr-2" />
-                                홈
-                              </LoadingLink>
-                            </DropdownMenuItem>
-                            
-                            <DropdownMenuItem asChild>
-                              <LoadingLink href={`/profile/${session.user.id}`} className="flex items-center">
-                                <User className="w-4 h-4 mr-2" />
-                                내 프로필
-                              </LoadingLink>
-                            </DropdownMenuItem>
-                            
-                            <DropdownMenuItem asChild>
-                              <LoadingLink href="/members" className="flex items-center">
-                                <Users className="w-4 h-4 mr-2" />
-                                팀원 목록
-                              </LoadingLink>
-                            </DropdownMenuItem>
-                            
-                            {session.user.role === 'ADMIN' && (
-                              <>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuLabel>관리자 메뉴</DropdownMenuLabel>
-                            
-                            <DropdownMenuItem asChild>
-                              <LoadingLink href="/admin/schedules" className="flex items-center">
-                                <Calendar className="w-4 h-4 mr-2" />
-                                일정 관리
-                              </LoadingLink>
-                            </DropdownMenuItem>
-                              </>
-                            )}
-                            
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem asChild>
-                              <form
-                                action={async () => {
-                                  "use server"
-                                  await signOut({ redirectTo: "/" })
-                                }}
-                                className="w-full"
-                              >
-                                <button 
-                                  type="submit"
-                                  className="flex items-center w-full text-red-400 hover:text-red-300"
-                                >
-                                  <LogOut className="w-4 h-4 mr-2" />
-                                  로그아웃
-                                </button>
-                              </form>
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="border-gray-600/50 text-gray-300 hover:bg-gray-700/50 hover:text-white active:scale-95"
+                >
+                  <Menu className="w-4 h-4" />
+                  <span className="hidden sm:inline ml-2">메뉴</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuLabel>
+                  {session.user.name || '사용자'} ({session.user.level})
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+
+                <DropdownMenuItem asChild>
+                  <LoadingLink href="/" className="flex items-center">
+                    <HomeIcon className="w-4 h-4 mr-2" />
+                    홈
+                  </LoadingLink>
+                </DropdownMenuItem>
+
+                <DropdownMenuItem asChild>
+                  <LoadingLink href={`/profile/${session.user.id}`} className="flex items-center">
+                    <User className="w-4 h-4 mr-2" />
+                    내 프로필
+                  </LoadingLink>
+                </DropdownMenuItem>
+
+                <DropdownMenuItem asChild>
+                  <LoadingLink href="/members" className="flex items-center">
+                    <Users className="w-4 h-4 mr-2" />
+                    팀원 목록
+                  </LoadingLink>
+                </DropdownMenuItem>
+
+                {session.user.role === 'ADMIN' && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuLabel>관리자 메뉴</DropdownMenuLabel>
+
+                    <DropdownMenuItem asChild>
+                      <LoadingLink href="/admin/schedules" className="flex items-center">
+                        <Calendar className="w-4 h-4 mr-2" />
+                        일정 관리
+                      </LoadingLink>
+                    </DropdownMenuItem>
+                  </>
+                )}
+
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <form
+                    action={async () => {
+                      "use server"
+                      await signOut({ redirectTo: "/" })
+                    }}
+                    className="w-full"
+                  >
+                    <button
+                      type="submit"
+                      className="flex items-center w-full text-red-400 hover:text-red-300"
+                    >
+                      <LogOut className="w-4 h-4 mr-2" />
+                      로그아웃
+                    </button>
+                  </form>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </header>
