@@ -13,7 +13,6 @@ export async function GET() {
   const startTime = Date.now()
 
   try {
-    console.log('[Dashboard Simple] Starting...')
     const session = await auth()
 
     if (!session?.user?.id) {
@@ -23,9 +22,13 @@ export async function GET() {
     const now = new Date()
     const userId = session.user.id
 
-    // 최소한의 쿼리만 실행
-    const [nextSchedule, userStats, totalMembers] = await Promise.all([
-      // 다음 경기만 (참석자 목록 포함)
+    // ✅ 최적화: 모든 쿼리를 단일 Promise.all로 병합
+    const [
+      nextSchedule,
+      userAttendStats,
+      totalMembers,
+    ] = await Promise.all([
+      // 1. 다음 경기 + 참석자 목록 (클라이언트 호환성)
       db.query.schedules.findFirst({
         where: gte(schedules.date, now),
         orderBy: [asc(schedules.date)],
@@ -44,6 +47,7 @@ export async function GET() {
               name: true,
             },
           },
+          // 참석자 목록 포함 (클라이언트에서 사용)
           attendances: {
             columns: {
               id: true,
@@ -74,28 +78,31 @@ export async function GET() {
         },
       }),
 
-      // 사용자 참석률
-      db.select({ status: attendances.status })
+      // 2. 사용자 참석률 - COUNT 쿼리로 최적화 (전체 레코드 안 가져옴)
+      db.select({
+        total: count(),
+        attended: sql<number>`SUM(CASE WHEN ${attendances.status} = 'ATTEND' THEN 1 ELSE 0 END)::int`,
+      })
         .from(attendances)
         .where(and(
           eq(attendances.userId, userId),
           sql`${attendances.guestName} IS NULL`
         )),
 
-      // 전체 회원 수
+      // 3. 전체 회원 수
       db.select({ count: count() }).from(users),
     ])
 
-    const executionTime = Date.now() - startTime
-    console.log(`[Dashboard Simple] Completed in ${executionTime}ms`)
-
-    // Add counts for next schedule
+    // 다음 경기가 있으면 참석/댓글 수 추가 (병렬)
     let nextScheduleWithCount = null
     if (nextSchedule) {
       const [attendCountResult, commentCountResult] = await Promise.all([
         db.select({ count: count() })
           .from(attendances)
-          .where(and(eq(attendances.scheduleId, nextSchedule.id), eq(attendances.status, 'ATTEND'))),
+          .where(and(
+            eq(attendances.scheduleId, nextSchedule.id),
+            eq(attendances.status, 'ATTEND')
+          )),
         db.select({ count: count() })
           .from(comments)
           .where(eq(comments.scheduleId, nextSchedule.id)),
@@ -110,11 +117,11 @@ export async function GET() {
       }
     }
 
-    const totalAttendances = userStats.length
-    const attendedCount = userStats.filter(a => a.status === 'ATTEND').length
-    const attendanceRate = totalAttendances > 0
-      ? Math.round((attendedCount / totalAttendances) * 100)
-      : 0
+    const total = Number(userAttendStats[0]?.total || 0)
+    const attended = Number(userAttendStats[0]?.attended || 0)
+    const attendanceRate = total > 0 ? Math.round((attended / total) * 100) : 0
+
+    const executionTime = Date.now() - startTime
 
     return NextResponse.json({
       nextSchedule: nextScheduleWithCount,
@@ -136,4 +143,3 @@ export async function GET() {
     )
   }
 }
-
